@@ -12,6 +12,8 @@ from typing import Optional
 from jxlpy import JXLImagePlugin
 from PIL import Image
 
+from metadata import ComicMetadata
+
 
 def get_image_info(image_path: Path) -> dict:
     """
@@ -75,6 +77,11 @@ def generate_comicinfo(
     title: Optional[str] = None,
     series: Optional[str] = None,
     number: Optional[int] = None,
+    count: Optional[int] = None,
+    volume: Optional[int] = None,
+    alternate_series: Optional[str] = None,
+    alternate_number: Optional[int] = None,
+    alternate_count: Optional[int] = None,
     writer: Optional[str] = None,
     artist: Optional[str] = None,
     colorist: Optional[str] = None,
@@ -83,6 +90,7 @@ def generate_comicinfo(
     cover_artist: Optional[str] = None,
     editor: Optional[str] = None,
     publisher: Optional[str] = None,
+    imprint: Optional[str] = None,
     genre: Optional[str] = None,
     summary: Optional[str] = None,
     year: Optional[int] = None,
@@ -94,8 +102,12 @@ def generate_comicinfo(
     language: Optional[str] = None,
     country: Optional[str] = None,
     rating: Optional[int] = None,
+    format: Optional[str] = None,
+    black_and_white: Optional[str] = None,
+    manga: Optional[str] = None,
     pages: Optional[int] = None,
     page_files: Optional[list] = None,
+    metadata: Optional[ComicMetadata] = None,
 ) -> str:
     """
     Generates the full ComicInfo.xml content.
@@ -106,6 +118,73 @@ def generate_comicinfo(
     Returns:
         str: The complete XML content as a string.
     """
+    # If metadata is provided, fill in missing values from it
+    if metadata:
+        if title is None:
+            title = metadata.title
+        if series is None:
+            series = metadata.series
+        if number is None:
+            number = metadata.number
+        if count is None:
+            count = metadata.count
+        if volume is None:
+            volume = metadata.volume
+        if alternate_series is None:
+            alternate_series = metadata.alternate_series
+        if alternate_number is None:
+            alternate_number = metadata.alternate_number
+        if alternate_count is None:
+            alternate_count = metadata.alternate_count
+        if writer is None:
+            writer = metadata.writer
+        if artist is None:
+            artist = metadata.artist
+        if colorist is None:
+            colorist = metadata.colorist
+        if inker is None:
+            inker = metadata.inker
+        if letterer is None:
+            letterer = metadata.letterer
+        if cover_artist is None:
+            cover_artist = metadata.cover_artist
+        if editor is None:
+            editor = metadata.editor
+        if publisher is None:
+            publisher = metadata.publisher
+        if imprint is None:
+            imprint = metadata.imprint
+        if genre is None:
+            genre = metadata.genre
+        if summary is None:
+            summary = metadata.summary
+        if year is None:
+            year = metadata.year
+        if month is None:
+            month = metadata.month
+        if day is None:
+            day = metadata.day
+        if web is None:
+            web = metadata.web
+        if isbn is None:
+            isbn = metadata.isbn
+        if notes is None:
+            notes = metadata.notes
+        if language is None:
+            language = metadata.language
+        if country is None:
+            country = metadata.country
+        if rating is None:
+            rating = metadata.rating
+        if format is None:
+            format = metadata.format
+        if black_and_white is None:
+            black_and_white = metadata.black_and_white
+        if manga is None:
+            manga = metadata.manga
+        if pages is None:
+            pages = metadata.pages
+
     xml = '<?xml version="1.0" encoding="utf-8"?>\n'
     xml += '<ComicInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">\n'
 
@@ -118,6 +197,11 @@ def generate_comicinfo(
     add_field('Title', title)
     add_field('Series', series)
     add_field('Number', number)
+    add_field('Count', count)
+    add_field('Volume', volume)
+    add_field('AlternateSeries', alternate_series)
+    add_field('AlternateNumber', alternate_number)
+    add_field('AlternateCount', alternate_count)
     add_field('Writer', writer)
     add_field('Penciller', artist)
     add_field('Inker', inker)
@@ -126,6 +210,7 @@ def generate_comicinfo(
     add_field('CoverArtist', cover_artist)
     add_field('Editor', editor)
     add_field('Publisher', publisher)
+    add_field('Imprint', imprint)
     add_field('Genre', genre)
     add_field('Summary', summary)
     add_field('Year', year)
@@ -137,6 +222,9 @@ def generate_comicinfo(
     add_field('LanguageISO', language)
     add_field('Country', country)
     add_field('Rating', rating)
+    add_field('Format', format)
+    add_field('BlackAndWhite', black_and_white)
+    add_field('Manga', manga)
     add_field('Pages', pages)
 
     if page_files:

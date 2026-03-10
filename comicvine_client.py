@@ -9,6 +9,7 @@ from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 from config import get_api_key
+from metadata import ComicMetadata
 
 BASE_URL = "https://comicvine.gamespot.com/api"
 
@@ -117,86 +118,91 @@ class ComicVineClient:
             "field_list": ",".join([
                 "id", "issue_number", "name", "cover_date", "store_date",
                 "description", "image", "volume", "person_credits",
-                "character_credits", "team_credits", "location_credits"
+                "character_credits", "team_credits", "location_credits",
+                "site_detail_url"
             ])
         })
 
         return data.get("results", {})
 
-def map_to_comicinfo(issue_data: Dict[str, Any], volume_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+def map_to_comicinfo(issue_data: Dict[str, Any], volume_data: Optional[Dict[str, Any]] = None) -> ComicMetadata:
     """
-    Map Comic Vine issue data to ComicInfo.xml fields.
+    Map Comic Vine issue data to ComicMetadata.
     
     Args:
         issue_data: Full issue data from Comic Vine
         volume_data: Optional volume data for additional context
     
     Returns:
-        Dictionary of ComicInfo fields
+        ComicMetadata object
     """
-    result = {}
+    result = ComicMetadata()
     
     # Summary/Description - strip HTML tags
     description = issue_data.get("description", "")
     if description:
-        # Remove HTML tags
         description = re.sub(r'<[^>]+>', '', description)
-        result["summary"] = description.strip()
+        result.summary = description.strip()
     
     # Parse cover date
     cover_date = issue_data.get("cover_date")
     if cover_date:
         try:
             dt = datetime.strptime(cover_date, "%Y-%m-%d")
-            result["year"] = dt.year
-            result["month"] = dt.month
-            result["day"] = dt.day
+            result.year = dt.year
+            result.month = dt.month
+            result.day = dt.day
         except ValueError:
             pass
+    
+    # Web URL from Comic Vine
+    cv_url = issue_data.get("site_detail_url")
+    if cv_url:
+        result.web = cv_url
+        result.notes = f"Comic Vine: {cv_url}"
     
     # Extract person credits by role
     person_credits = issue_data.get("person_credits", [])
     roles_map = {
-        "Writer": "writer",
-        "Penciller": "artist",
-        "Inker": "inker",
-        "Colorist": "colorist",
-        "Letterer": "letterer",
-        "Cover": "cover_artist",
-        "Editor": "editor",
+        "writer": "writer",
+        "artist": "artist",  # Comic Vine uses "artist" for penciller
+        "penciller": "artist",
+        "inker": "inker",
+        "colorist": "colorist",
+        "letterer": "letterer",
+        "cover": "cover_artist",
+        "editor": "editor",
     }
     
     people_by_role = {}
     for person in person_credits:
-        role = person.get("role", "")
+        role_str = person.get("role", "")
         name = person.get("name", "")
-        if role and name:
-            if role not in people_by_role:
-                people_by_role[role] = []
-            people_by_role[role].append(name)
+        if role_str and name:
+            # Split comma-separated roles
+            roles = [r.strip().lower() for r in role_str.split(',')]
+            for role in roles:
+                if role not in people_by_role:
+                    people_by_role[role] = []
+                people_by_role[role].append(name)
     
     for cv_role, ci_field in roles_map.items():
         if cv_role in people_by_role:
-            result[ci_field] = ", ".join(people_by_role[cv_role])
+            setattr(result, ci_field, ", ".join(people_by_role[cv_role]))
     
     # Publisher from volume
     if volume_data:
         publisher = volume_data.get("publisher", {})
         if isinstance(publisher, dict):
-            result["publisher"] = publisher.get("name")
+            result.publisher = publisher.get("name")
         elif publisher:
-            result["publisher"] = publisher
+            result.publisher = publisher
     
     # Genre from volume
     if volume_data:
         genre = volume_data.get("genre")
         if genre:
-            result["genre"] = genre
-    
-    # Notes with Comic Vine URL
-    cv_url = issue_data.get("site_detail_url")
-    if cv_url:
-        result["notes"] = f"Comic Vine: {cv_url}"
+            result.genre = genre
     
     return result
 

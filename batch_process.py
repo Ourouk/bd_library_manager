@@ -11,13 +11,14 @@ It performs the following steps for each folder:
 """
 
 import argparse
-import subprocess
-import sys
 from pathlib import Path
 from typing import Optional
 
 from config import get_api_key, set_api_key, get_cached_series_info, cache_series_info, get_cached_series
 from comicvine_client import ComicVineClient, map_to_comicinfo, find_issue_by_number
+from convert_jpeg_to_jxl import batch_convert
+from generate_comicinfo import generate_comicinfo
+from create_cbz import create_cbz
 
 
 def setup_comicvine() -> Optional[ComicVineClient]:
@@ -98,22 +99,6 @@ def confirm_series(client: ComicVineClient, series_name: str) -> Optional[dict]:
         print(f"  Invalid choice. Enter a number 1-{len(results)} or 0 to skip.")
 
 
-def run_cmd(cmd):
-    """
-    Executes a shell command and prints STDERR if it fails.
-
-    Args:
-        cmd (str): The command to execute.
-
-    Returns:
-        bool: True if the command succeeded, False otherwise.
-    """
-    result = subprocess.run(cmd, shell=True, capture_output=True)
-    if result.returncode != 0:
-        print(f"  STDERR: {result.stderr.decode()}")
-    return result.returncode == 0
-
-
 def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, output_folder: Optional[Path] = None, threads: int = 4, comicvine_client: Optional[ComicVineClient] = None, series_cache: Optional[dict] = None):
     """
     Processes a single folder of JPEG images to create a JXL-based CBZ archive.
@@ -174,7 +159,8 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
                 if issue:
                     print(f"  Found issue #{number}: {issue.get('name', 'N/A')}")
                     issue_data = comicvine_client.get_issue(issue["id"])
-                    cv_metadata = map_to_comicinfo(issue_data)
+                    volume_data = issue_data.get("volume")
+                    cv_metadata = map_to_comicinfo(issue_data, volume_data)
                 else:
                     print(f"  Issue #{number} not found in series")
         else:
@@ -204,7 +190,8 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
                 if issue:
                     print(f"  Found issue #{number}: {issue.get('name', 'N/A')}")
                     issue_data = comicvine_client.get_issue(issue["id"])
-                    cv_metadata = map_to_comicinfo(issue_data)
+                    volume_data = issue_data.get("volume")
+                    cv_metadata = map_to_comicinfo(issue_data, volume_data)
                 else:
                     print(f"  Issue #{number} not found in series")
     
@@ -213,49 +200,34 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
     
     # Convert JPEGs to JXL
     print(f"  Converting {len(jpeg_files)} JPEGs to JXL...")
-    lossless_flag = "-l" if lossless else ""
-    cmd = f'python convert_jpeg_to_jxl.py "{folder}" "{jxl_folder}" -q {quality} {lossless_flag} -t {threads}'
-    if not run_cmd(cmd):
-        print("  ERROR: Conversion failed")
+    try:
+        batch_convert(folder, jxl_folder, quality, lossless, threads)
+    except Exception as e:
+        print(f"  ERROR: Conversion failed: {e}")
         return False
     
     # Generate ComicInfo.xml metadata
     print(f"  Generating ComicInfo.xml...")
-    series_arg = f'--series "{series_name}"' if series_name else ""
-    number_arg = f'--number {number}' if number else ""
-    title_arg = f'--title "{title}"' if title else ""
     
-    # Add Comic Vine metadata as arguments
-    cv_args = ""
-    if cv_metadata:
-        if cv_metadata.get("summary"):
-            cv_args += f' --summary "{cv_metadata["summary"]}"'
-        if cv_metadata.get("writer"):
-            cv_args += f' --writer "{cv_metadata["writer"]}"'
-        if cv_metadata.get("artist"):
-            cv_args += f' --artist "{cv_metadata["artist"]}"'
-        if cv_metadata.get("inker"):
-            cv_args += f' --inker "{cv_metadata["inker"]}"'
-        if cv_metadata.get("colorist"):
-            cv_args += f' --colorist "{cv_metadata["colorist"]}"'
-        if cv_metadata.get("letterer"):
-            cv_args += f' --letterer "{cv_metadata["letterer"]}"'
-        if cv_metadata.get("cover_artist"):
-            cv_args += f' --cover-artist "{cv_metadata["cover_artist"]}"'
-        if cv_metadata.get("publisher"):
-            cv_args += f' --publisher "{cv_metadata["publisher"]}"'
-        if cv_metadata.get("year"):
-            cv_args += f' --year {cv_metadata["year"]}'
-        if cv_metadata.get("month"):
-            cv_args += f' --month {cv_metadata["month"]}'
-        if cv_metadata.get("genre"):
-            cv_args += f' --genre "{cv_metadata["genre"]}"'
-        if cv_metadata.get("notes"):
-            cv_args += f' --notes "{cv_metadata["notes"]}"'
+    # Get page files
+    page_files = list(jxl_folder.glob('*.jpg')) + list(jxl_folder.glob('*.jpeg'))
+    page_files += list(jxl_folder.glob('*.JPG')) + list(jxl_folder.glob('*.JPEG'))
+    page_files += list(jxl_folder.glob('*.jxl')) + list(jxl_folder.glob('*.JXL'))
+    page_files.sort()
     
-    cmd = f'python generate_comicinfo.py "{jxl_folder}" {series_arg} {number_arg} {title_arg} {cv_args} --images "{jxl_folder}"'
-    if not run_cmd(cmd):
-        print("  ERROR: Metadata generation failed")
+    try:
+        xml = generate_comicinfo(
+            title=title,
+            series=series_name,
+            number=int(number) if number else None,
+            metadata=cv_metadata,
+            page_files=page_files if page_files else None,
+        )
+        
+        comicinfo_path = jxl_folder / 'ComicInfo.xml'
+        comicinfo_path.write_text(xml, encoding='utf-8')
+    except Exception as e:
+        print(f"  ERROR: Metadata generation failed: {e}")
         return False
     
     # Create the CBZ archive
@@ -264,9 +236,10 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
         cbz_path = output_folder / f"{folder.name}.cbz"
     else:
         cbz_path = folder.parent / f"{folder.name}.cbz"
-    cmd = f'python create_cbz.py "{jxl_folder}" "{cbz_path}"'
-    if not run_cmd(cmd):
-        print("  ERROR: CBZ creation failed")
+    try:
+        create_cbz(jxl_folder, cbz_path, jxl_folder / 'ComicInfo.xml')
+    except Exception as e:
+        print(f"  ERROR: CBZ creation failed: {e}")
         return False
     
     # Clean up the temporary JXL folder if requested

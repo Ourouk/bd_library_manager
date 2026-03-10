@@ -2,27 +2,25 @@
 """
 This script converts JPEG images to the JPEG XL (JXL) format.
 It can be used to convert a single file or a batch of files from a directory.
-The script uses the 'cjxl' command-line tool, which must be installed and in the system's PATH.
+The script uses the 'pylibjxl' library.
 """
 
 import argparse
 import concurrent.futures
-import os
 from pathlib import Path
-import subprocess
 import sys
 
-def find_cjxl():
-    """
-    Finds the path to the 'cjxl' executable.
-    Returns:
-        str: The path to the 'cjxl' executable, or None if not found.
-    """
-    for name in ['cjxl', 'cjxl.exe']:
-        path = subprocess.run(['which', name], capture_output=True).stdout.decode().strip()
-        if path:
-            return path
-    return None
+import numpy as np
+import pylibjxl
+from PIL import Image
+
+
+def quality_to_distance(quality: int) -> float:
+    """Convert JPEG quality (1-100) to JXL distance (0-15)."""
+    if quality >= 100:
+        return 0.0
+    return max(0.1, (100 - quality) / 100 * 15)
+
 
 def convert_jpeg_to_jxl(input_path: Path, output_path: Path, quality: int = 90, lossless: bool = True):
     """
@@ -33,16 +31,23 @@ def convert_jpeg_to_jxl(input_path: Path, output_path: Path, quality: int = 90, 
         quality (int): The JXL encoding quality (1-100). Defaults to 90. Used in lossy mode.
         lossless (bool): Whether to use lossless JXL encoding. Defaults to True.
     """
-    cjxl = find_cjxl()
-    if not cjxl:
-        print("Error: cjxl not found. Install libjxl.", file=sys.stderr)
+    try:
+        if lossless:
+            pylibjxl.convert_jpeg_to_jxl(str(input_path), str(output_path))
+        else:
+            distance = quality_to_distance(quality)
+            with Image.open(input_path) as img:
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                arr = np.array(img)
+            jxl_data = pylibjxl.encode(arr, effort=7, distance=distance, lossless=False)
+            with open(output_path, 'wb') as f:
+                f.write(jxl_data)
+        return True
+    except Exception as e:
+        print(f"Error converting {input_path}: {e}", file=sys.stderr)
         return False
-    if lossless:
-        cmd = [cjxl, str(input_path), str(output_path), '-d', '0', '--lossless_jpeg=1']
-    else:
-        cmd = [cjxl, str(input_path), str(output_path), '-q', str(quality), '--lossless_jpeg=0']
-    result = subprocess.run(cmd, capture_output=True)
-    return result.returncode == 0
+
 
 def process_file(jpeg_file, output_dir, quality, lossless):
     output_file = output_dir / (jpeg_file.stem + '.jxl')
@@ -50,6 +55,7 @@ def process_file(jpeg_file, output_dir, quality, lossless):
         print(f"  Converted {jpeg_file.name} -> {output_file.name} ... OK")
     else:
         print(f"  Converted {jpeg_file.name} -> {output_file.name} ... FAILED")
+
 
 def batch_convert(input_dir: Path, output_dir: Path, quality: int = 90, lossless: bool = True, max_threads: int = 4):
     """
@@ -74,6 +80,7 @@ def batch_convert(input_dir: Path, output_dir: Path, quality: int = 90, lossless
         futures = [executor.submit(process_file, jpeg_file, output_dir, quality, lossless) for jpeg_file in jpeg_files]
         concurrent.futures.wait(futures)
     print("Done.")
+
 
 def main():
     """
