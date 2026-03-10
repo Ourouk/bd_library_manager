@@ -99,7 +99,7 @@ def confirm_series(client: ComicVineClient, series_name: str) -> Optional[dict]:
         print(f"  Invalid choice. Enter a number 1-{len(results)} or 0 to skip.")
 
 
-def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, output_folder: Optional[Path] = None, threads: int = 4, comicvine_client: Optional[ComicVineClient] = None, series_cache: Optional[dict] = None):
+def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, output_folder: Optional[Path] = None, threads: int = 4, comicvine_client: Optional[ComicVineClient] = None, series_cache: Optional[dict] = None, country: Optional[str] = None, language: Optional[str] = None):
     """
     Processes a single folder of JPEG images to create a JXL-based CBZ archive.
 
@@ -159,7 +159,7 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
                 if issue:
                     print(f"  Found issue #{number}: {issue.get('name', 'N/A')}")
                     issue_data = comicvine_client.get_issue(issue["id"])
-                    volume_data = issue_data.get("volume")
+                    volume_data = comicvine_client.get_volume(cached.get("id"))
                     cv_metadata = map_to_comicinfo(issue_data, volume_data)
                 else:
                     print(f"  Issue #{number} not found in series")
@@ -175,6 +175,7 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
                 # Fetch all issues for this series
                 print(f"  Fetching issues for {series_info['name']}...")
                 volume_id = series_info["id"]
+                volume_data = comicvine_client.get_volume(volume_id)
                 issues = comicvine_client.get_volume_issues(volume_id)
                 print(f"  Found {len(issues)} issues")
                 
@@ -190,7 +191,6 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
                 if issue:
                     print(f"  Found issue #{number}: {issue.get('name', 'N/A')}")
                     issue_data = comicvine_client.get_issue(issue["id"])
-                    volume_data = issue_data.get("volume")
                     cv_metadata = map_to_comicinfo(issue_data, volume_data)
                 else:
                     print(f"  Issue #{number} not found in series")
@@ -222,6 +222,8 @@ def process_folder(folder: Path, quality: int, lossless: bool, keep_jxl: bool, o
             number=int(number) if number else None,
             metadata=cv_metadata,
             page_files=page_files if page_files else None,
+            country=country,
+            language=language,
         )
         
         comicinfo_path = jxl_folder / 'ComicInfo.xml'
@@ -258,13 +260,15 @@ def main():
     """
     parser = argparse.ArgumentParser(description='Batch process comic folders')
     parser.add_argument('input', help='Input folder or file pattern (e.g., ./comics or "./comics/*")')
-    parser.add_argument('-q', '--quality', type=int, default=90, help='JXL quality (1-100)')
-    parser.add_argument('-l', '--lossless', action='store_true', help='Use lossless mode')
-    parser.add_argument('-k', '--keep-jxl', action='store_true', help='Keep intermediate JXL files')
-    parser.add_argument('--single', action='store_true', help='Process single folder (not batch of subfolders)')
-    parser.add_argument('-o', '--output-folder', type=Path, help='Output folder for CBZ files')
-    parser.add_argument('-t', '--threads', type=int, default=4, help='Number of threads to use')
-    parser.add_argument('--comicvine', action='store_true', help='Enrich metadata using Comic Vine API')
+    parser.add_argument('-q', '--quality', type=int, default=90, help='JXL quality 1-100 (default: 90)')
+    parser.add_argument('-l', '--lossless', action='store_true', help='Use lossless compression (default: lossy)')
+    parser.add_argument('-k', '--keep-jxl', action='store_true', help='Keep intermediate JXL files after creating CBZ')
+    parser.add_argument('--single', action='store_true', help='Process single folder instead of batch of subfolders')
+    parser.add_argument('-o', '--output-folder', type=Path, help='Output folder for CBZ files (default: same as input)')
+    parser.add_argument('-t', '--threads', type=int, default=4, help='Number of threads for JXL conversion (default: 4)')
+    parser.add_argument('--comicvine', action='store_true', help='Enrich metadata using Comic Vine API (requires API key)')
+    parser.add_argument('--country', type=str, help='Country code for ComicInfo.xml (e.g., FR, US, GB)')
+    parser.add_argument('--language', type=str, help='Language ISO code for ComicInfo.xml (e.g., fr, en, es)')
     
     args = parser.parse_args()
     
@@ -296,7 +300,7 @@ def main():
     # Process each folder and track the number of successes
     success = 0
     for folder in folders:
-        if process_folder(folder, args.quality, args.lossless, args.keep_jxl, args.output_folder, args.threads, comicvine_client, series_cache):
+        if process_folder(folder, args.quality, args.lossless, args.keep_jxl, args.output_folder, args.threads, comicvine_client, series_cache, args.country, args.language):
             success += 1
     
     # Save cached series to config

@@ -68,7 +68,7 @@ class ComicVineClient:
     
     def get_volume(self, volume_id: int) -> Dict[str, Any]:
         """Get detailed volume information."""
-        data = self._request(f"volume/{volume_id}")
+        data = self._request(f"volume/4050-{volume_id}")
         return data.get("results", {})
     
     def get_volume_issues(self, volume_id: int, limit: int = 100) -> List[Dict[str, Any]]:
@@ -203,6 +203,12 @@ def map_to_comicinfo(issue_data: Dict[str, Any], volume_data: Optional[Dict[str,
         genre = volume_data.get("genre")
         if genre:
             result.genre = genre
+    
+    # Count of issues from volume
+    if volume_data:
+        count = volume_data.get("count_of_issues")
+        if count:
+            result.count = count
     
     return result
 
