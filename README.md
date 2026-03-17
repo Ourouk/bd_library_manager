@@ -51,13 +51,18 @@ bdlib /path/to/comics -q 85 -t 8
 ```python
 from bdlib.converters import jpeg_to_jxl, cbz
 from bdlib.metadata.comicinfo import generate_comicinfo
-from bdlib.config import set_api_key
+from bdlib.metadata import extract_folder_metadata
+from bdlib.config import config, set_api_key
+from bdlib.models import ComicMetadata
+
+# Extract folder-based metadata
+metadata = extract_folder_metadata(Path("path/to/folder"))
 
 # Convert images
 jpeg_to_jxl.batch_convert("input/", "output/", quality=90)
 
 # Generate metadata
-xml = generate_comicinfo(title="Issue #1", series="My Series", number=1)
+xml = generate_comicinfo(metadata)
 
 # Create CBZ
 cbz.create_cbz("images/", "output.cbz")
@@ -67,16 +72,32 @@ cbz.create_cbz("images/", "output.cbz")
 
 ```
 bdlib/
-├── cli.py                 # Command-line interface
-├── config.py              # Configuration management
-├── metadata.py            # ComicMetadata dataclass
+├── cli/
+│   ├── __init__.py         # Plugin interface definitions
+│   ├── dto.py              # Data transfer objects
+│   └── main.py             # Command-line interface
+├── config.py               # Configuration management
+├── log.py                  # Logging configuration
+├── models.py               # ComicMetadata dataclass
 ├── converters/
-│   ├── jpeg_to_jxl.py    # JPEG → JXL conversion
-│   └── cbz.py            # CBZ archive creation
-└── metadata/
-    ├── comicinfo.py       # ComicInfo.xml generation
-    └── comicvine/
-        └── client.py      # Comic Vine API client
+│   ├── __init__.py
+│   ├── cbz.py              # CBZ archive creation
+│   └── jpeg_to_jxl.py      # JPEG → JXL conversion
+├── metadata/
+│   ├── __init__.py         # Metadata package exports
+│   ├── comicinfo.py        # ComicInfo.xml generation
+│   ├── folder.py           # Folder-based metadata extraction
+│   └── comicvine/          # Comic Vine API integration
+│       ├── __init__.py
+│       └── client.py       # Comic Vine API client
+└── plugins/
+    ├── __init__.py
+    ├── __pycache__
+    ├── converter.py        # Converter plugin
+    ├── general.py          # General plugin (CLI args)
+    └── metadata/
+        ├── __init__.py
+        └── comicvine.py    # Comic Vine metadata plugin
 ```
 
 ## Configuration
