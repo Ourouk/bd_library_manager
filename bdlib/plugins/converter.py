@@ -1,4 +1,5 @@
 from argparse import ArgumentParser, Namespace
+
 from bdlib.cli import CliPlugin
 from bdlib.cli.dto import ConverterConfig
 
@@ -22,10 +23,10 @@ class ConverterPlugin(CliPlugin):
         )
         parser.add_argument(
             "-t",
-            "--threads",
+            "--dejpeg-threads",
             type=int,
-            default=4,
-            help="Number of threads for JXL conversion (default: 4)",
+            default=1,
+            help="Number of threads for DeJPEG (default: 1, use 1 for CUDA)",
         )
         parser.add_argument(
             "--dejpeg",
@@ -46,7 +47,8 @@ class ConverterPlugin(CliPlugin):
                 quality=args.quality,
                 lossless=args.lossless,
                 keep_jxl=args.keep_jxl,
-                threads=args.threads,
+                threads=args.dejpeg_threads,
+                jxl_threads=4,  # JXL always uses 4 threads on CPU
                 dejpeg=args.dejpeg,
                 dejpeg_model=args.dejpeg_model,
             )

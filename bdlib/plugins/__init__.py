@@ -1,11 +1,12 @@
-import pkg_resources
+from importlib.metadata import entry_points
 from typing import List
 from bdlib.cli import CliPlugin
 
 
 def discover_plugins() -> List[CliPlugin]:
     plugins = []
-    for entry_point in pkg_resources.iter_entry_points("bdlib.plugins"):
+    eps = entry_points(group="bdlib.plugins")
+    for entry_point in eps:
         try:
             plugin_class = entry_point.load()
             plugins.append(plugin_class())
