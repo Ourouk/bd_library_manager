@@ -29,6 +29,7 @@ dependencies = [
     "jxlpy",
     "pylibjxl",
     "numpy",
+    "onnxruntime-gpu",
 ]
 
 [project.optional-dependencies]

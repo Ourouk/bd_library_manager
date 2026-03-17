@@ -27,6 +27,18 @@ class ConverterPlugin(CliPlugin):
             default=4,
             help="Number of threads for JXL conversion (default: 4)",
         )
+        parser.add_argument(
+            "--dejpeg",
+            action="store_true",
+            help="Remove JPEG artifacts using FBCNN model before conversion",
+        )
+        parser.add_argument(
+            "--dejpeg-model",
+            type=str,
+            default="fbcnn_color",
+            choices=["fbcnn_color"],
+            help="DeJPEG model to use (default: fbcnn_color)",
+        )
 
     def handle_arguments(self, args: Namespace) -> dict:
         return {
@@ -35,5 +47,7 @@ class ConverterPlugin(CliPlugin):
                 lossless=args.lossless,
                 keep_jxl=args.keep_jxl,
                 threads=args.threads,
+                dejpeg=args.dejpeg,
+                dejpeg_model=args.dejpeg_model,
             )
         }

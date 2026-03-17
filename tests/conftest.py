@@ -27,9 +27,9 @@ def sample_image_files(tmp_path, sample_jpeg_bytes):
     """Create a temporary directory with sample image files."""
     img_dir = tmp_path / "images"
     img_dir.mkdir()
-    
+
     (img_dir / "page01.jpg").write_bytes(sample_jpeg_bytes)
     (img_dir / "page02.jpg").write_bytes(sample_jpeg_bytes)
     (img_dir / "page03.jpg").write_bytes(sample_jpeg_bytes)
-    
+
     return img_dir

@@ -14,7 +14,7 @@ from bdlib.log import get_logger
 
 logger = get_logger(__name__)
 
-IMAGE_EXTENSIONS = ["*.jpg", "*.jpeg", "*.JPG", "*.JPEG"]
+IMAGE_EXTENSIONS = ["*.jpg", "*.jpeg", "*.JPG", "*.JPEG", "*.png", "*.PNG"]
 
 
 def quality_to_distance(quality: int) -> float:
@@ -28,16 +28,26 @@ def convert_jpeg_to_jxl(
     input_path: Path, output_path: Path, quality: int = 90, lossless: bool = True
 ):
     """
-    Converts a single JPEG image to JXL format.
+    Converts a single image (JPEG or PNG) to JXL format.
     Args:
-        input_path (Path): The path to the input JPEG image.
+        input_path (Path): The path to the input image (JPEG or PNG).
         output_path (Path): The path to the output JXL image.
         quality (int): The JXL encoding quality (1-100). Defaults to 90. Used in lossy mode.
         lossless (bool): Whether to use lossless JXL encoding. Defaults to True.
     """
     try:
+        input_suffix = input_path.suffix.lower()
         if lossless:
-            pylibjxl.convert_jpeg_to_jxl(str(input_path), str(output_path))
+            if input_suffix in (".jpg", ".jpeg"):
+                pylibjxl.convert_jpeg_to_jxl(str(input_path), str(output_path))
+            else:
+                with Image.open(input_path) as img:
+                    if img.mode != "RGB":
+                        img = img.convert("RGB")
+                    arr = np.array(img)
+                jxl_data = pylibjxl.encode(arr, effort=7, distance=0.0, lossless=True)
+                with open(output_path, "wb") as f:
+                    f.write(jxl_data)
         else:
             distance = quality_to_distance(quality)
             with Image.open(input_path) as img:

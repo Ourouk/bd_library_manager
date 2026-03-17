@@ -37,7 +37,7 @@ class TestComicMetadata:
         """Test converting to dictionary."""
         meta = ComicMetadata(title="Test", number=1, writer="Author")
         result = meta.to_dict()
-        
+
         assert result == {"title": "Test", "number": 1, "writer": "Author"}
         assert "series" not in result  # None values excluded
 
@@ -51,7 +51,7 @@ class TestComicMetadata:
         """Test with partial field set."""
         meta = ComicMetadata(publisher="DC Comics", genre="Superhero")
         result = meta.to_dict()
-        
+
         assert result["publisher"] == "DC Comics"
         assert result["genre"] == "Superhero"
         assert len(result) == 2

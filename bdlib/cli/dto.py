@@ -9,6 +9,8 @@ class ConverterConfig:
     lossless: bool = False
     keep_jxl: bool = False
     threads: int = 4
+    dejpeg: bool = False
+    dejpeg_model: str = "fbcnn_color"
 
 
 @dataclass
