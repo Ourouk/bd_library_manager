@@ -45,3 +45,13 @@ class ComicMetadata:
     def to_dict(self) -> dict:
         """Convert to dictionary, excluding None values."""
         return {k: v for k, v in asdict(self).items() if v is not None}
+
+    def merge(self, other: "ComicMetadata") -> "ComicMetadata":
+        """
+        Merge another ComicMetadata object into this one.
+        Fields from the other object will only be used if the corresponding field in this object is None.
+        """
+        for k, v in asdict(other).items():
+            if getattr(self, k) is None and v is not None:
+                setattr(self, k, v)
+        return self

@@ -1,74 +1,100 @@
 # BD Library Manager
 
-A small **vibe coding experiment** to automate comic archive preparation.
-
-It was coded using Gemini Copilot and other free access AI.
-In conjuncture with OpenCode and worktrunk to guide more easily the agents.
+A Python library and CLI tool for automating comic archive preparation.
 
 ## What this project does
 
-This project helps you process folders of comic pages (JPEG) into clean comic archives:
+Process folders of comic pages (JPEG) into clean comic archives:
 
-- Converts JPEG pages to JPEG XL (`.jxl`) using `cjxl`
+- Converts JPEG pages to JPEG XL (`.jxl`)
 - Generates `ComicInfo.xml` metadata
-- Optionally enriches metadata from the Comic Vine API
+- Optionally enriches metadata from Comic Vine API
 - Builds `.cbz` archives ready for comic readers
 - Supports batch processing for multiple folders
 
-## Main scripts
+## Installation
 
-- `batch_process.py`: end-to-end batch workflow (convert + metadata + CBZ)
-- `convert_jpeg_to_jxl.py`: JPEG → JXL conversion
-- `generate_comicinfo.py`: standalone ComicInfo.xml generator
-- `create_cbz.py`: build CBZ archives from image folders
-- `comicvine_client.py`: Comic Vine API integration and metadata mapping
-- `config.py`: local config and cache (`~/.bd_library_manager/config.json`)
+```bash
+# Clone and install in editable mode
+pip install -e .
+
+# Or install dependencies only
+pip install requests Pillow jxlpy pylibjxl numpy
+```
 
 ## Requirements
 
 - Python 3.10+
-- `cjxl` installed and available in `PATH`
-- Python packages:
-  - `requests`
-  - `Pillow`
-  - `jxlpy`
+- `cjxl` (from libjxl) in PATH for some operations
+- Python packages: `requests`, `Pillow`, `jxlpy`, `pylibjxl`, `numpy`
 
-Install Python dependencies:
+## Usage
 
-```bash
-pip install requests Pillow jxlpy
-```
-
-## Quick start
-
-### 1) Convert one folder of JPEGs to JXL
+### CLI
 
 ```bash
-python convert_jpeg_to_jxl.py /path/to/jpeg_folder /path/to/output_jxl -t 4
+# Full batch workflow
+bdlib /path/to/library_root
+
+# With Comic Vine enrichment
+bdlib /path/to/comics --comicvine
+
+# Process single folder
+bdlib /path/to/folder --single
+
+# Custom quality and threads
+bdlib /path/to/comics -q 85 -t 8
 ```
 
-### 2) Generate ComicInfo.xml
+### Python API
 
-```bash
-python generate_comicinfo.py /path/to/output --series "Series Name" --number 1 --title "Issue Title"
+```python
+from bdlib.converters import jpeg_to_jxl, cbz
+from bdlib.metadata.comicinfo import generate_comicinfo
+from bdlib.config import set_api_key
+
+# Convert images
+jpeg_to_jxl.batch_convert("input/", "output/", quality=90)
+
+# Generate metadata
+xml = generate_comicinfo(title="Issue #1", series="My Series", number=1)
+
+# Create CBZ
+cbz.create_cbz("images/", "output.cbz")
 ```
 
-### 3) Create a CBZ
+## Project Structure
 
-```bash
-python create_cbz.py /path/to/output_jxl /path/to/output.cbz
+```
+bdlib/
+├── cli.py                 # Command-line interface
+├── config.py              # Configuration management
+├── metadata.py            # ComicMetadata dataclass
+├── converters/
+│   ├── jpeg_to_jxl.py    # JPEG → JXL conversion
+│   └── cbz.py            # CBZ archive creation
+└── metadata/
+    ├── comicinfo.py       # ComicInfo.xml generation
+    └── comicvine/
+        └── client.py      # Comic Vine API client
 ```
 
-### 4) Run the full batch workflow
+## Configuration
 
-```bash
-python batch_process.py /path/to/library_root
+On first use of Comic Vine features, the CLI prompts for an API key (free from https://comicvine.gamespot.com/api/).
+
+Config and cache are stored in `~/.bd_library_manager/`.
+
+## Folder Naming Convention
+
+For batch processing, use: `Series Name/01 - Issue Title`
+
+Example:
 ```
-
-On first use of Comic Vine features, the script prompts for an API key and stores it locally.
-
-## Notes
-
-- The expected folder naming convention in batch mode is close to: `Series Name/01 - Issue Title`
-- Comic Vine matching may require manual confirmation for ambiguous series names
-- Cache and API key are stored in `~/.bd_library_manager/`
+Batman/
+├── 01 - The Killing Joke/
+│   ├── page01.jpg
+│   └── page02.jpg
+└── 02 - A Death in the Family/
+    └── ...
+```
