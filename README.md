@@ -7,6 +7,7 @@ A Python library and CLI tool for automating comic archive preparation.
 Process folders of comic pages (JPEG) into clean comic archives:
 
 - Converts JPEG pages to JPEG XL (`.jxl`)
+- Removes JPEG artifacts using FBCNN (AI-powered, CUDA-accelerated)
 - Generates `ComicInfo.xml` metadata
 - Optionally enriches metadata from Comic Vine API
 - Builds `.cbz` archives ready for comic readers
@@ -19,14 +20,21 @@ Process folders of comic pages (JPEG) into clean comic archives:
 pip install -e .
 
 # Or install dependencies only
-pip install requests Pillow jxlpy pylibjxl numpy
+pip install requests Pillow jxlpy pylibjxl numpy onnxruntime-gpu
 ```
+
+### CUDA Support
+
+For GPU acceleration (recommended for DeJPEG):
+- Requires NVIDIA GPU with CUDA 13.x support
+- Requires cuDNN 9.x
+- Automatically uses CUDA when available, falls back to CPU
 
 ## Requirements
 
 - Python 3.10+
 - `cjxl` (from libjxl) in PATH for some operations
-- Python packages: `requests`, `Pillow`, `jxlpy`, `pylibjxl`, `numpy`
+- Python packages: `requests`, `Pillow`, `jxlpy`, `pylibjxl`, `numpy`, `onnxruntime-gpu`
 
 ## Usage
 
@@ -35,6 +43,12 @@ pip install requests Pillow jxlpy pylibjxl numpy
 ```bash
 # Full batch workflow
 bdlib /path/to/library_root
+
+# With JPEG artifact removal (DeJPEG)
+bdlib /path/to/comics --dejpeg
+
+# With DeJPEG and CUDA (default with GPU)
+bdlib /path/to/comics --dejpeg -t 1
 
 # With Comic Vine enrichment
 bdlib /path/to/comics --comicvine
@@ -45,6 +59,16 @@ bdlib /path/to/folder --single
 # Custom quality and threads
 bdlib /path/to/comics -q 85 -t 8
 ```
+
+### DeJPEG Options
+
+| Flag | Description | Default |
+|------|-------------|---------|
+| `--dejpeg` | Enable JPEG artifact removal | Disabled |
+| `--dejpeg-model` | Model to use | fbcnn_color |
+| `-t, --threads` | Threads for DeJPEG | 4 |
+
+**Note:** Use `-t 1` with CUDA to avoid GPU memory exhaustion.
 
 ### Python API
 

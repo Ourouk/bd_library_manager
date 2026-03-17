@@ -11,7 +11,7 @@ source .venv/bin/activate
 uv pip install -e .
 
 # Or install just dependencies
-uv pip install requests Pillow jxlpy pylibjxl numpy
+uv pip install requests Pillow jxlpy pylibjxl numpy onnxruntime-gpu
 ```
 
 ## Quick Start
@@ -44,6 +44,12 @@ cbz.create_cbz("output/", "comic.cbz")
 # Full batch workflow
 bdlib ./comics
 
+# With JPEG artifact removal (DeJPEG with CUDA)
+bdlib ./comics --dejpeg -t 1
+
+# With DeJPEG on CPU only
+bdlib ./comics --dejpeg
+
 # With Comic Vine enrichment
 bdlib ./comics --comicvine
 
@@ -65,9 +71,60 @@ bdlib ./comics -q 85 -t 8 --lossless -o ./output
 | `--single` | Process single folder | False |
 | `-o, --output-folder` | Output directory | Same as input |
 | `-t, --threads` | Thread count for conversion | 4 |
+| `--dejpeg` | Enable JPEG artifact removal | False |
+| `--dejpeg-model` | DeJPEG model to use | fbcnn_color |
 | `--comicvine` | Enrich metadata via API | False |
 | `--country` | Country code (FR, US, etc.) | None |
 | `--language` | Language code (en, fr, etc.) | None |
+
+## DeJPEG (JPEG Artifact Removal)
+
+The library uses [FBCNN](https://github.com/jiaxi-jiang/FBCNN) for AI-powered JPEG artifact removal.
+
+### Requirements
+
+- **CPU**: Works out of the box with `onnxruntime-gpu`
+- **GPU (Recommended)**: NVIDIA GPU with CUDA 13.x + cuDNN 9.x
+
+### Performance
+
+| Mode | Speed (1920x2492) | Notes |
+|------|-------------------|-------|
+| CPU (20 threads) | ~65s/image | Default fallback |
+| CUDA (1 thread) | ~2s/image | **32x faster** |
+
+**Note:** Use `-t 1` with CUDA to avoid GPU memory exhaustion.
+
+### Python API
+
+```python
+from bdlib.converters import dejpeg
+from pathlib import Path
+
+# Convert single image
+dejpeg.convert_jpeg(
+    input_path=Path("page.jpg"),
+    output_path=Path("page_clean.png"),
+)
+
+# Batch convert with CUDA
+dejpeg.batch_convert(
+    input_dir=Path("input/"),
+    output_dir=Path("output/"),
+    max_threads=1,  # Use 1 thread with CUDA
+)
+
+# Or use directly with ONNX session
+session = dejpeg._get_ort_session(model_path)
+dejpeg.convert_jpeg(input_path, output_path, model_session=session)
+```
+
+### How It Works
+
+FBCNN predicts the JPEG quality factor and removes artifacts while preserving details:
+- Quality factor input (0-1): Lower = more aggressive artifact removal
+- Default: 0.5 (moderate removal)
+- Model auto-detects quality if no input provided
 
 ## API Reference
 
