@@ -1,6 +1,5 @@
 """Test metadata module."""
 
-import pytest
 
 from bdlib import ComicMetadata
 

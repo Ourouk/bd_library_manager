@@ -3,8 +3,32 @@
 Comic metadata classes for BD Library Manager.
 """
 
-from dataclasses import dataclass, asdict
-from typing import Optional
+from dataclasses import asdict, dataclass
+from typing import List, Optional
+
+
+@dataclass
+class PageInfo:
+    """Information about a single page from conversion."""
+
+    filename: str
+    width: int
+    height: int
+    size: int
+    double_page: bool = False
+
+    def to_dict(self) -> dict:
+        """Convert to dictionary."""
+        return asdict(self)
+
+
+@dataclass
+class ConversionResult:
+    """Result of a batch conversion."""
+
+    success: bool
+    pages: List[PageInfo]
+    total_duration_ms: int
 
 
 @dataclass
@@ -41,6 +65,9 @@ class ComicMetadata:
     black_and_white: Optional[str] = None
     manga: Optional[str] = None
     pages: Optional[int] = None
+    denoise_model: Optional[str] = None
+    denoise_noise_level: Optional[int] = None
+    denoise_scale_factor: Optional[int] = None
 
     def to_dict(self) -> dict:
         """Convert to dictionary, excluding None values."""

@@ -73,18 +73,37 @@ bdlib ./comics -q 85 -t 8 --lossless -o ./output
 | `-t, --threads` | Thread count for conversion | 4 |
 | `--dejpeg` | Enable JPEG artifact removal | False |
 | `--dejpeg-model` | DeJPEG model to use | fbcnn_color |
+| `-jt, --jxl-threads` | JXL encoding threads | 4 |
 | `--comicvine` | Enrich metadata via API | False |
 | `--country` | Country code (FR, US, etc.) | None |
 | `--language` | Language code (en, fr, etc.) | None |
 
 ## DeJPEG (JPEG Artifact Removal)
 
-The library uses [FBCNN](https://github.com/jiaxi-jiang/FBCNN) for AI-powered JPEG artifact removal.
+The library supports two AI models for JPEG artifact removal:
+
+- **FBCNN**: Fast JPEG artifact removal model
+- **waifu2x**: Multiple architectures (cunet, swin_unet) optimized for anime/art or photographic content
 
 ### Requirements
 
 - **CPU**: Works out of the box with `onnxruntime-gpu`
 - **GPU (Recommended)**: NVIDIA GPU with CUDA 13.x + cuDNN 9.x
+
+### Available Models
+
+| Model | Type | Description |
+|-------|------|-------------|
+| `fbcnn_color` | JPEG artifacts | Fast quality factor prediction |
+| `waifu2x_cunet_art` | Art/Anime | Classic CuNet architecture |
+| `waifu2x_cunet_photo` | Photographic | Classic CuNet architecture |
+| `waifu2x_swin_unet_art` | Art/Anime | Modern SwinUNet architecture |
+| `waifu2x_swin_unet_photo` | Photographic | Modern SwinUNet architecture |
+| `waifu2x_swin_unet_art_scan` | Scanned Art | Optimized for scanned art |
+
+Each waifu2x model supports:
+- Noise levels 0-3: `waifu2x_swin_unet_art:noise2`
+- 2x upscaling: `waifu2x_swin_unet_art:noise0:scale2x`
 
 ### Performance
 
@@ -93,7 +112,15 @@ The library uses [FBCNN](https://github.com/jiaxi-jiang/FBCNN) for AI-powered JP
 | CPU (20 threads) | ~65s/image | Default fallback |
 | CUDA (1 thread) | ~2s/image | **32x faster** |
 
-**Note:** Use `-t 1` with CUDA to avoid GPU memory exhaustion.
+**Note:** Use `-jt 1` with CUDA to avoid GPU memory exhaustion.
+
+### Tiled Processing
+
+waifu2x models use tiled processing with seam blending to handle large images:
+- Images are split into overlapping tiles
+- Each tile is processed independently
+- Edges are blended using a weighted average to eliminate seams
+- Edge replication padding is used to prevent border artifacts
 
 ### Python API
 
@@ -114,17 +141,33 @@ dejpeg.batch_convert(
     max_threads=1,  # Use 1 thread with CUDA
 )
 
-# Or use directly with ONNX session
-session = dejpeg._get_ort_session(model_path)
-dejpeg.convert_jpeg(input_path, output_path, model_session=session)
+# Use waifu2x model with tiled processing
+dejpeg.batch_convert(
+    input_dir=Path("input/"),
+    output_dir=Path("output/"),
+    model_string="waifu2x_swin_unet_art:noise0",
+)
 ```
 
 ### How It Works
 
-FBCNN predicts the JPEG quality factor and removes artifacts while preserving details:
-- Quality factor input (0-1): Lower = more aggressive artifact removal
-- Default: 0.5 (moderate removal)
-- Model auto-detects quality if no input provided
+- **FBCNN**: Predicts JPEG quality factor and removes artifacts while preserving details
+- **waifu2x**: Neural network upscaling with tiled processing for artifact-free results
+
+### Creating Models
+
+```python
+from bdlib.converters.dejpeg import create_model, DejpegConfig
+
+# FBCNN model
+model, config = create_model("fbcnn_color")
+
+# waifu2x model with specific noise level
+model, config = create_model("waifu2x_swin_unet_art:noise2")
+
+# waifu2x with 2x upscaling
+model, config = create_model("waifu2x_cunet_photo:noise0:scale2x")
+```
 
 ## API Reference
 

@@ -4,13 +4,14 @@ Comic Vine API client for fetching comic metadata.
 """
 
 import re
-import requests
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import requests
 
 from bdlib.config import get_api_key
-from bdlib.models import ComicMetadata
 from bdlib.log import get_logger
+from bdlib.models import ComicMetadata
 
 logger = get_logger(__name__)
 
@@ -70,7 +71,7 @@ class ComicVineClient:
         offset = 0
         while True:
             data = self._request(
-                f"issues",
+                "issues",
                 {
                     "filter": f"volume:{volume_id}",
                     "limit": limit,

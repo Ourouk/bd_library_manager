@@ -6,7 +6,7 @@ Stores API keys and cached series data.
 
 import json
 from pathlib import Path
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 
 from bdlib.log import get_logger
 
