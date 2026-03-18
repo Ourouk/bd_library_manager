@@ -146,71 +146,34 @@ def process_folder(
     if cv_metadata:
         metadata = metadata.merge(cv_metadata)
 
-    # Determine input folder for JXL conversion
-    # If dejpeg is enabled, process JPEGs first, then convert to JXL
-    # Otherwise, convert JPEGs directly to JXL
-    input_for_jxl = folder
-    temp_dejpeg_folder = None
     jxl_folder = folder.parent / f"{folder.name}_jxl"
+    jxl_folder.mkdir(parents=True, exist_ok=True)
 
+    dejpeg_result = None
     if converter_config.dejpeg:
-        temp_dejpeg_folder = folder.parent / f"{folder.name}_dejpeg"
-        logger.info(f"Removing JPEG artifacts from {len(jpeg_files)} files using FBCNN...")
-
-        def run_dejpeg():
-            try:
-                dejpeg.batch_convert(
-                    folder,
-                    temp_dejpeg_folder,
-                    max_threads=converter_config.threads,
-                )
-            except Exception as e:
-                logger.error(f"DeJPEG processing failed: {e}")
-
-        def run_jxl():
-            import time
-
-            time.sleep(0.5)
-            try:
-                jpeg_to_jxl.batch_convert(
-                    temp_dejpeg_folder,
-                    jxl_folder,
-                    converter_config.quality,
-                    converter_config.lossless,
-                    converter_config.jxl_threads,
-                )
-            except Exception as e:
-                logger.error(f"Conversion failed: {e}")
-
-        from concurrent.futures import ThreadPoolExecutor
-
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            dejpeg_future = executor.submit(run_dejpeg)
-            jxl_future = executor.submit(run_jxl)
+        logger.info(
+            f"Removing JPEG artifacts from {len(jpeg_files)} files using {converter_config.dejpeg_model}..."
+        )
 
         try:
-            dejpeg_future.result()
+            dejpeg_result = dejpeg.batch_convert(
+                folder,
+                jxl_folder,
+                max_threads=converter_config.threads,
+                model_string=converter_config.dejpeg_model,
+                output_jxl=True,
+                jxl_quality=converter_config.quality,
+                jxl_lossless=converter_config.lossless,
+            )
             logger.info("JPEG artifact removal completed")
         except Exception as e:
             logger.error(f"DeJPEG processing failed: {e}")
-            if temp_dejpeg_folder and temp_dejpeg_folder.exists():
-                shutil.rmtree(temp_dejpeg_folder)
             return False
-
-        try:
-            jxl_future.result()
-        except Exception as e:
-            logger.error(f"Conversion failed: {e}")
-            if temp_dejpeg_folder and temp_dejpeg_folder.exists():
-                shutil.rmtree(temp_dejpeg_folder)
-            return False
-
-        input_for_jxl = temp_dejpeg_folder
     else:
         logger.info(f"Converting {len(jpeg_files)} images to JXL...")
         try:
             jpeg_to_jxl.batch_convert(
-                input_for_jxl,
+                folder,
                 jxl_folder,
                 converter_config.quality,
                 converter_config.lossless,
@@ -218,19 +181,36 @@ def process_folder(
             )
         except Exception as e:
             logger.error(f"Conversion failed: {e}")
-            if temp_dejpeg_folder and temp_dejpeg_folder.exists():
-                shutil.rmtree(temp_dejpeg_folder)
             return False
 
     logger.info("Generating ComicInfo.xml...")
 
-    page_files = list(jxl_folder.glob("*.jpg")) + list(jxl_folder.glob("*.jpeg"))
-    page_files += list(jxl_folder.glob("*.JPG")) + list(jxl_folder.glob("*.JPEG"))
-    page_files += list(jxl_folder.glob("*.jxl")) + list(jxl_folder.glob("*.JXL"))
-    page_files.sort()
+    page_infos = None
+    denoise_info = None
+
+    if converter_config.dejpeg and dejpeg_result and dejpeg_result.success:
+        page_infos = dejpeg_result.pages
+        denoise_info = dejpeg_result.config
+    elif not converter_config.dejpeg:
+        page_files = list(jxl_folder.glob("*.jxl")) + list(jxl_folder.glob("*.JXL"))
+        page_files.sort()
+        if page_files:
+            from bdlib.models import PageInfo
+
+            page_infos = []
+            for pf in page_files:
+                size = pf.stat().st_size
+                page_infos.append(
+                    PageInfo(
+                        filename=pf.name,
+                        width=0,
+                        height=0,
+                        size=size,
+                    )
+                )
 
     try:
-        xml = generate_comicinfo(metadata, page_files=page_files if page_files else None)
+        xml = generate_comicinfo(metadata, page_infos=page_infos, denoise_info=denoise_info)
         comicinfo_path = jxl_folder / "ComicInfo.xml"
         comicinfo_path.write_text(xml, encoding="utf-8")
     except Exception as e:
@@ -253,11 +233,6 @@ def process_folder(
         shutil.rmtree(jxl_folder)
 
     logger.info(f"Done: {cbz_path.name}")
-
-    # Clean up temp dejpeg folder if it exists
-    if converter_config.dejpeg and temp_dejpeg_folder and temp_dejpeg_folder.exists():
-        logger.info("Cleaning up temporary DeJPEG folder...")
-        shutil.rmtree(temp_dejpeg_folder)
 
     return True
 

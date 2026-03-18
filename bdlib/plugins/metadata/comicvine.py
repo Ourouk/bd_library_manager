@@ -1,8 +1,9 @@
 from argparse import ArgumentParser, Namespace
-from typing import Optional, Any
+from typing import Any, Optional
+
 from bdlib.cli.dto import MetadataConfig
-from bdlib.metadata.comicvine import ComicVineClient
 from bdlib.config import get_api_key, set_api_key
+from bdlib.metadata.comicvine import ComicVineClient
 from bdlib.plugins.metadata import MetadataPlugin
 
 

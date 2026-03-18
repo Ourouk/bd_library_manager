@@ -7,7 +7,8 @@ A Python library and CLI tool for automating comic archive preparation.
 Process folders of comic pages (JPEG) into clean comic archives:
 
 - Converts JPEG pages to JPEG XL (`.jxl`)
-- Removes JPEG artifacts using FBCNN (AI-powered, CUDA-accelerated)
+- Removes JPEG artifacts using FBCNN or waifu2x (AI-powered, CUDA-accelerated)
+- Supports tiled processing with seam blending for waifu2x models
 - Generates `ComicInfo.xml` metadata
 - Optionally enriches metadata from Comic Vine API
 - Builds `.cbz` archives ready for comic readers
@@ -23,12 +24,34 @@ pip install -e .
 pip install requests Pillow jxlpy pylibjxl numpy onnxruntime-gpu
 ```
 
+### Shell Script (Recommended)
+
+A convenient shell script is provided for easy CLI usage:
+
+```bash
+# Make executable (already done in git)
+chmod +x bdlib.sh
+
+# Show help
+./bdlib.sh help
+
+# Show available models
+./bdlib.sh info
+
+# Process comics
+./bdlib.sh --input ./comics
+./bdlib.sh -i ./folder --dejpeg
+./bdlib.sh -i ./folder --dejpeg --dejpeg-model waifu2x_swin_unet_art:noise0
+```
+
 ### CUDA Support
 
 For GPU acceleration (recommended for DeJPEG):
 - Requires NVIDIA GPU with CUDA 13.x support
 - Requires cuDNN 9.x
 - Automatically uses CUDA when available, falls back to CPU
+
+**Note:** ONNX Runtime may emit `ScatterND` warnings when using CUDA. These are harmless internal messages.
 
 ## Requirements
 
@@ -66,9 +89,12 @@ bdlib /path/to/comics -q 85 -t 8
 |------|-------------|---------|
 | `--dejpeg` | Enable JPEG artifact removal | Disabled |
 | `--dejpeg-model` | Model to use | fbcnn_color |
-| `-t, --threads` | Threads for DeJPEG | 4 |
 
-**Note:** Use `-t 1` with CUDA to avoid GPU memory exhaustion.
+**Available models:** `fbcnn_color`, `waifu2x_cunet_art`, `waifu2x_cunet_photo`, `waifu2x_swin_unet_art`, `waifu2x_swin_unet_photo`, `waifu2x_swin_unet_art_scan`
+
+Each waifu2x model supports noise levels 0-3 (e.g., `waifu2x_swin_unet_art:noise2`) and optional 2x upscaling (`scale2x`).
+
+**Note:** Use `-jt 1` with CUDA to avoid GPU memory exhaustion.
 
 ### Python API
 
@@ -106,7 +132,13 @@ bdlib/
 ├── converters/
 │   ├── __init__.py
 │   ├── cbz.py              # CBZ archive creation
-│   └── jpeg_to_jxl.py      # JPEG → JXL conversion
+│   ├── jpeg_to_jxl.py     # JPEG → JXL conversion
+│   └── dejpeg/             # JPEG artifact removal (AI models)
+│       ├── __init__.py    # Factory and batch functions
+│       ├── protocol.py    # DejpegModel interface
+│       ├── tiled.py       # Tiled processing utilities
+│       ├── fbcnn.py       # FBCNN model
+│       └── waifu2x.py     # waifu2x model
 ├── metadata/
 │   ├── __init__.py         # Metadata package exports
 │   ├── comicinfo.py        # ComicInfo.xml generation

@@ -1,9 +1,6 @@
 """Test CBZ creation."""
 
 import zipfile
-from pathlib import Path
-
-import pytest
 
 from bdlib.converters import cbz
 
@@ -11,43 +8,30 @@ from bdlib.converters import cbz
 class TestCreateCbz:
     """Test CBZ archive creation."""
 
-    def test_create_cbz_basic(self, tmp_path):
-        """Test basic CBZ creation."""
-        # Create input directory with images
-        input_dir = tmp_path / "input"
-        input_dir.mkdir()
-
-        (input_dir / "page1.jpg").write_bytes(b"fake jpeg 1")
-        (input_dir / "page2.jpg").write_bytes(b"fake jpeg 2")
-
+    def test_create_cbz_with_real_images(self, temp_image_folder, tmp_path):
+        """Test CBZ creation with real sample images."""
         output_file = tmp_path / "output.cbz"
 
-        result = cbz.create_cbz(input_dir, output_file)
+        result = cbz.create_cbz(temp_image_folder, output_file)
 
         assert result is True
         assert output_file.exists()
+        assert output_file.stat().st_size > 0
 
-        # Verify ZIP contents
         with zipfile.ZipFile(output_file, "r") as zf:
             names = zf.namelist()
-            assert len(names) == 2
+            assert len(names) == 5
             assert "001.jpg" in names
             assert "002.jpg" in names
 
-    def test_create_cbz_with_metadata(self, tmp_path):
+    def test_create_cbz_with_metadata(self, temp_image_folder, tmp_path):
         """Test CBZ creation with ComicInfo.xml."""
-        input_dir = tmp_path / "input"
-        input_dir.mkdir()
-
-        (input_dir / "page1.jpg").write_bytes(b"x")
-
-        # Create ComicInfo.xml
-        comic_info = input_dir / "ComicInfo.xml"
-        comic_info.write_text("<ComicInfo></ComicInfo>")
+        comic_info = temp_image_folder / "ComicInfo.xml"
+        comic_info.write_text("<ComicInfo><Title>Test</Title></ComicInfo>")
 
         output_file = tmp_path / "output.cbz"
 
-        cbz.create_cbz(input_dir, output_file, comic_info)
+        cbz.create_cbz(temp_image_folder, output_file, comic_info)
 
         with zipfile.ZipFile(output_file, "r") as zf:
             names = zf.namelist()
@@ -65,44 +49,40 @@ class TestCreateCbz:
 
         assert result is False
 
-    def test_create_cbz_output_path_default(self, tmp_path):
+    def test_create_cbz_output_path_default(self, temp_image_folder, tmp_path):
         """Test default output path uses input directory name."""
-        input_dir = tmp_path / "my_comic"
-        input_dir.mkdir()
-        (input_dir / "page.jpg").write_bytes(b"x")
-
-        result = cbz.create_cbz(input_dir)
+        result = cbz.create_cbz(temp_image_folder)
 
         assert result is True
-        assert (tmp_path / "my_comic.cbz").exists()
+        assert (tmp_path / "images.cbz").exists()
 
-    def test_create_cbz_sorting(self, tmp_path):
+    def test_create_cbz_sorting(self, tmp_path, sample_image_files):
         """Test images are sorted correctly."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
 
-        # Create files in non-alphabetical order
-        (input_dir / "z_page.jpg").write_bytes(b"z")
-        (input_dir / "a_page.jpg").write_bytes(b"a")
-        (input_dir / "m_page.jpg").write_bytes(b"m")
+        for i, src in enumerate(sample_image_files[:3], start=1):
+            dst = input_dir / f"z_page{i}.jpg"
+            dst.write_bytes(src.read_bytes())
 
         output_file = tmp_path / "output.cbz"
         cbz.create_cbz(input_dir, output_file)
 
         with zipfile.ZipFile(output_file, "r") as zf:
             names = zf.namelist()
-            # Should be sorted: 001, 002, 003
             assert names[0] == "001.jpg"
             assert names[1] == "002.jpg"
             assert names[2] == "003.jpg"
 
-    def test_create_cbz_jxl_extension(self, tmp_path):
+    def test_create_cbz_jxl_extension(self, tmp_path, sample_image_files):
         """Test CBZ creation with JXL files."""
         input_dir = tmp_path / "input"
         input_dir.mkdir()
 
-        (input_dir / "page1.jxl").write_bytes(b"fake jxl")
-        (input_dir / "page2.jxl").write_bytes(b"fake jxl")
+        for i in range(2):
+            dst = input_dir / f"page{i + 1}.jxl"
+            src = sample_image_files[i]
+            dst.write_bytes(src.read_bytes())
 
         output_file = tmp_path / "output.cbz"
 
@@ -112,3 +92,13 @@ class TestCreateCbz:
             names = zf.namelist()
             assert "001.jxl" in names
             assert "002.jxl" in names
+
+    def test_create_cbz_from_sample_folder(self, sample_folder, tmp_path):
+        """Test creating CBZ from the full sample folder."""
+        output_file = tmp_path / "full_output.cbz"
+
+        result = cbz.create_cbz(sample_folder, output_file)
+
+        assert result is True
+        assert output_file.exists()
+        assert output_file.stat().st_size > 1000000

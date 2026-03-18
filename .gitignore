@@ -214,3 +214,8 @@ pyrightconfig.json
 
 tests/sample/*
 tests/output/*
+
+# Build outputs
+output/
+*.cbz
+uv.lock

@@ -1,12 +1,10 @@
 """Test ComicInfo.xml generation."""
 
-import tempfile
-from pathlib import Path
+import zipfile
 
-import pytest
-
+from bdlib.converters import cbz
 from bdlib.metadata.comicinfo import generate_comicinfo
-from bdlib.models import ComicMetadata
+from bdlib.models import ComicMetadata, PageInfo
 
 
 class TestGenerateComicinfo:
@@ -98,21 +96,60 @@ class TestGenerateComicinfo:
 class TestPageFiles:
     """Test page files handling."""
 
-    def test_pages_xml_generation(self):
+    def test_pages_xml_generation(self, temp_image_folder):
         """Test page files generate Pages section."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            img_dir = Path(tmpdir)
+        page_infos = [
+            PageInfo(filename="01.jpg", width=1920, height=2492, size=100000),
+            PageInfo(filename="02.jpg", width=1920, height=2492, size=100000),
+        ]
 
-            # Create dummy files
-            (img_dir / "page1.jpg").write_bytes(b"x")
-            (img_dir / "page2.jpg").write_bytes(b"x")
+        result = generate_comicinfo(
+            ComicMetadata(title="Test"),
+            page_infos=page_infos,
+        )
 
-            result = generate_comicinfo(
-                ComicMetadata(title="Test"),
-                page_files=[img_dir / "page1.jpg", img_dir / "page2.jpg"],
-            )
+        assert "<Pages>" in result
+        assert "</Pages>" in result
+        assert 'Image="0"' in result
+        assert 'Image="1"' in result
 
-            assert "<Pages>" in result
-            assert "</Pages>" in result
-            assert 'Image="0"' in result
-            assert 'Image="1"' in result
+    def test_pages_with_real_dimensions(self):
+        """Test pages section with PageInfo."""
+        page_infos = [
+            PageInfo(filename="01.jpg", width=1920, height=2492, size=100000),
+            PageInfo(filename="02.jpg", width=1920, height=2492, size=100000),
+            PageInfo(filename="03.jpg", width=3000, height=2000, size=150000),
+        ]
+
+        result = generate_comicinfo(
+            ComicMetadata(title="Avant l'Incal"),
+            page_infos=page_infos,
+        )
+
+        assert "<Pages>" in result
+        assert 'Image="0"' in result
+        assert 'Image="1"' in result
+        assert 'Image="2"' in result
+        assert 'ImageWidth="1920"' in result
+        assert 'ImageHeight="2492"' in result
+
+    def test_comicinfo_in_cbz(self, temp_image_folder, tmp_path):
+        """Test that ComicInfo.xml is properly generated and can be included in CBZ."""
+        metadata = ComicMetadata(
+            title="Test Comic",
+            series="Test Series",
+            number=1,
+            writer="Test Writer",
+            year=2024,
+        )
+        xml = generate_comicinfo(metadata)
+        comic_info_path = temp_image_folder / "ComicInfo.xml"
+        comic_info_path.write_text(xml)
+
+        output_file = tmp_path / "test.cbz"
+        cbz.create_cbz(temp_image_folder, output_file, comic_info_path)
+
+        with zipfile.ZipFile(output_file, "r") as zf:
+            content = zf.read("ComicInfo.xml").decode("utf-8")
+            assert "<Title>Test Comic</Title>" in content
+            assert "<Series>Test Series</Series>" in content
