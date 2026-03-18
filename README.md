@@ -116,7 +116,7 @@ from bdlib.converters.archive import extract_archive, is_archive
 from bdlib.metadata.comicinfo import generate_comicinfo
 from bdlib.metadata import extract_folder_metadata
 from bdlib.config import config, set_api_key
-from bdlib.models import ComicMetadata
+from bdlib.dto import ComicMetadata
 
 # Extract folder-based metadata
 metadata = extract_folder_metadata(Path("path/to/folder"))
@@ -143,11 +143,13 @@ cbz.create_cbz("images/", "output.cbz")
 bdlib/
 ├── cli/
 │   ├── __init__.py         # Plugin interface definitions
-│   ├── dto.py              # Data transfer objects
+│   ├── dto.py              # Re-exports from bdlib.dto.cli
 │   └── main.py             # Command-line interface
 ├── config.py               # Configuration management
-├── log.py                  # Logging configuration
-├── models.py               # ComicMetadata dataclass
+├── dto/                    # Data Transfer Objects
+│   ├── __init__.py         # Public exports
+│   ├── comic_metadata.py   # ComicMetadata, PageInfo, ConversionResult
+│   └── cli.py              # ProcessingConfig, ConverterConfig, MetadataConfig
 ├── converters/
 │   ├── __init__.py
 │   ├── archive/            # Archive extraction
@@ -171,6 +173,7 @@ bdlib/
 │   └── comicvine/          # Comic Vine API integration
 │       ├── __init__.py
 │       └── client.py       # Comic Vine API client
+├── models.py               # Placeholder (classes moved to bdlib.dto)
 └── plugins/
     ├── __init__.py
     ├── converter.py        # Converter plugin

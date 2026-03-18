@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from bdlib.models import PageInfo
+from bdlib.dto import PageInfo
 
 from .fbcnn import FBCNNModel
 from .fbcnn import create as create_fbcnn

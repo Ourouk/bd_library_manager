@@ -9,9 +9,9 @@ from bdlib.config import (
     set_api_key,
 )
 from bdlib.converters import cbz, jpeg_to_jxl
+from bdlib.dto import ComicMetadata
 from bdlib.metadata.comicinfo import generate_comicinfo
 from bdlib.metadata.comicvine import ComicVineClient, find_issue_by_number, map_to_comicinfo
-from bdlib.models import ComicMetadata
 
 __all__ = [
     "ComicMetadata",

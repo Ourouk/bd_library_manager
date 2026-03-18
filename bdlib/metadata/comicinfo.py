@@ -5,8 +5,8 @@ ComicInfo.xml generation.
 
 from typing import List, Optional
 
+from bdlib.dto import ComicMetadata, PageInfo
 from bdlib.log import get_logger
-from bdlib.models import ComicMetadata, PageInfo
 
 logger = get_logger(__name__)
 

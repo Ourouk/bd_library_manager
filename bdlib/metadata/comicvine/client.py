@@ -10,8 +10,8 @@ from typing import Any, Dict, List, Optional
 import requests
 
 from bdlib.config import get_api_key
+from bdlib.dto import ComicMetadata
 from bdlib.log import get_logger
-from bdlib.models import ComicMetadata
 
 logger = get_logger(__name__)
 

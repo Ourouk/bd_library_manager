@@ -15,11 +15,13 @@ A Python library and CLI tool for automating comic archive preparation. Process 
 bdlib/
 ├── cli/
 │   ├── __init__.py         # CliPlugin protocol definition
-│   ├── dto.py              # Data transfer objects (ProcessingConfig, etc.)
+│   ├── dto.py              # Re-exports from bdlib.dto.cli (backward compat)
 │   └── main.py             # CLI entry point
 ├── config.py               # Configuration management
-├── log.py                  # Logging configuration
-├── models.py               # ComicMetadata dataclass
+├── dto/                    # Data Transfer Objects
+│   ├── __init__.py         # Public exports
+│   ├── comic_metadata.py   # ComicMetadata, PageInfo, ConversionResult
+│   └── cli.py              # ProcessingConfig, ConverterConfig, MetadataConfig
 ├── converters/             # Image format conversion
 │   ├── __init__.py         # Public API exports
 │   ├── archive/            # Archive extraction
@@ -43,6 +45,7 @@ bdlib/
 │   └── comicvine/          # Comic Vine API integration
 │       ├── __init__.py
 │       └── client.py
+├── models.py             # Placeholder (classes moved to bdlib.dto)
 └── plugins/              # CLI plugin system
     ├── __init__.py         # Plugin discovery via entry_points
     ├── converter.py        # Converter plugin (--dejpeg)
@@ -132,11 +135,26 @@ if is_archive(path):
 
 Each extractor follows the `ArchiveExtractor` interface in `base.py`.
 
-### 3. Data Models
+### 3. Data Transfer Objects (DTOs)
 
-`ComicMetadata` is a `@dataclass` in `models.py`. All fields are Optional with sensible defaults. Includes `to_dict()` and `merge()` methods.
+`ComicMetadata` is a `@dataclass` in `bdlib/dto/comic_metadata.py`. All fields are Optional with sensible defaults. Includes `to_dict()` and `merge()` methods.
 
-### 4. Converters Pattern
+```python
+from bdlib.dto import ComicMetadata
+
+# Create from metadata provider
+meta = ComicMetadata(
+    series="Batman",
+    number=1,
+    title="The Killing Joke",
+)
+
+# Merge with additional metadata
+cv_meta = ComicMetadata(writer="Alan Moore", artist="Brian Bolland")
+meta.merge(cv_meta)
+```
+
+### 4. Adding a New Metadata Source
 
 Converters are organized in `bdlib/converters/` with a public `__init__.py` that exports the API:
 
@@ -226,9 +244,9 @@ class MyPlugin(CliPlugin):
 my_plugin = "bdlib.plugins.my_plugin:MyPlugin"
 ```
 
-### Adding a New Model
+### Extending ComicMetadata
 
-Extend `ComicMetadata` in `bdlib/models.py` by adding new fields as `@dataclass` attributes:
+Extend `ComicMetadata` in `bdlib/dto/comic_metadata.py` by adding new fields as `@dataclass` attributes:
 
 ```python
 @dataclass

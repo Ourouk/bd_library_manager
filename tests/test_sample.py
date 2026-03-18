@@ -9,8 +9,8 @@ from bdlib.converters.dejpeg import (
     create_model,
     get_available_models,
 )
+from bdlib.dto import ComicMetadata
 from bdlib.metadata.comicinfo import generate_comicinfo
-from bdlib.models import ComicMetadata
 
 
 class TestWithSampleData:

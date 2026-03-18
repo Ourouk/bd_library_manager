@@ -13,11 +13,11 @@ from bdlib.cli.dto import ConverterConfig, MetadataConfig, ProcessingConfig
 from bdlib.config import cache_series_info, get_cached_series
 from bdlib.converters import cbz, dejpeg, jpeg_to_jxl
 from bdlib.converters.archive import is_archive
+from bdlib.dto import ComicMetadata
 from bdlib.log import get_logger
 from bdlib.metadata import extract_folder_metadata
 from bdlib.metadata.comicinfo import generate_comicinfo
 from bdlib.metadata.comicvine import confirm_series, find_issue_by_number, map_to_comicinfo
-from bdlib.models import ComicMetadata
 from bdlib.plugins import discover_plugins
 from bdlib.plugins.metadata import MetadataPlugin
 
@@ -208,7 +208,7 @@ def process_folder(
         page_files = list(jxl_folder.glob("*.jxl")) + list(jxl_folder.glob("*.JXL"))
         page_files.sort()
         if page_files:
-            from bdlib.models import PageInfo
+            from bdlib.dto import PageInfo
 
             page_infos = []
             for pf in page_files:

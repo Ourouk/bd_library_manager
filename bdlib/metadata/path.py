@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 from typing import Optional, Tuple
 
-from bdlib.models import ComicMetadata
+from bdlib.dto import ComicMetadata
 
 PATTERN_WITH_TITLE = r"(\d+)\s*-\s*(.+)"
 PATTERN_NUMBER_ONLY = r"^(\d+)$"

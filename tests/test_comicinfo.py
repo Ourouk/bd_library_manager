@@ -3,8 +3,8 @@
 import zipfile
 
 from bdlib.converters import cbz
+from bdlib.dto import ComicMetadata, PageInfo
 from bdlib.metadata.comicinfo import generate_comicinfo
-from bdlib.models import ComicMetadata, PageInfo
 
 
 class TestGenerateComicinfo:

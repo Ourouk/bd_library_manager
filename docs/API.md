@@ -19,7 +19,8 @@ apt install unrar  # or brew install unrar on macOS
 
 ```python
 from pathlib import Path
-from bdlib import ComicMetadata, generate_comicinfo
+from bdlib.dto import ComicMetadata
+from bdlib import generate_comicinfo
 from bdlib.converters import jpeg_to_jxl, cbz
 from bdlib.converters.archive import extract_archive, is_archive
 
@@ -192,7 +193,7 @@ model, config = create_model("waifu2x_cunet_photo:noise0:scale2x")
 Dataclass for comic metadata.
 
 ```python
-from bdlib import ComicMetadata
+from bdlib.dto import ComicMetadata
 
 meta = ComicMetadata(
     title="Issue #1",
@@ -304,7 +305,7 @@ cbz.create_cbz(Path("images/"))  # Creates images.cbz
 
 ```python
 from bdlib.metadata.comicinfo import generate_comicinfo, get_image_info
-from bdlib import ComicMetadata
+from bdlib.dto import ComicMetadata
 
 # Generate XML from parameters
 xml = generate_comicinfo(
@@ -370,7 +371,7 @@ from bdlib.metadata.comicvine import (
     map_to_comicinfo,
     find_issue_by_number,
 )
-from bdlib import ComicMetadata
+from bdlib.dto import ComicMetadata
 
 # Initialize client
 client = ComicVineClient(api_key="your-api-key")

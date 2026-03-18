@@ -1,6 +1,6 @@
 """Test metadata module."""
 
-from bdlib import ComicMetadata
+from bdlib.dto import ComicMetadata
 from bdlib.metadata.path import extract_folder_metadata
 
 
