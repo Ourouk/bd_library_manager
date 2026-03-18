@@ -30,6 +30,7 @@ dependencies = [
     "pylibjxl",
     "numpy",
     "onnxruntime-gpu",
+    "py7zr",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +39,9 @@ dev = [
     "ruff",
     "mypy",
     "numpy",
+]
+cbr = [
+    "rarfile",
 ]
 
 [project.scripts]

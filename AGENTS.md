@@ -2,7 +2,12 @@
 
 ## Overview
 
-A Python library and CLI tool for automating comic archive preparation. Process folders of comic pages (JPEG) into clean comic archives with JPEG XL conversion, AI-powered artifact removal, ComicInfo.xml metadata generation, and CBZ archive creation.
+A Python library and CLI tool for automating comic archive preparation. Process folders of comic pages (JPEG) or comic archives (CBZ/CBR/CB7) into clean JXL-based archives with JPEG XL conversion, AI-powered artifact removal, ComicInfo.xml metadata generation, and CBZ archive creation.
+
+## Input Formats
+
+- **Folders**: Directories containing JPEG images
+- **Archives**: CBZ, CBR, CB7 comic archives (automatically extracted for processing)
 
 ## Project Structure
 
@@ -17,6 +22,12 @@ bdlib/
 ├── models.py               # ComicMetadata dataclass
 ├── converters/             # Image format conversion
 │   ├── __init__.py         # Public API exports
+│   ├── archive/            # Archive extraction
+│   │   ├── __init__.py    # Factory: is_archive(), extract_archive()
+│   │   ├── base.py        # ArchiveExtractor interface
+│   │   ├── cbz.py         # CBZ extraction (stdlib zipfile)
+│   │   ├── cbr.py         # CBR extraction (rarfile, optional)
+│   │   └── cb7.py          # CB7 extraction (py7zr)
 │   ├── cbz.py             # CBZ archive creation
 │   ├── jpeg_to_jxl.py     # JPEG → JXL conversion
 │   └── dejpeg/            # JPEG artifact removal (AI models)
@@ -28,7 +39,7 @@ bdlib/
 ├── metadata/              # Metadata handling
 │   ├── __init__.py         # Public API exports
 │   ├── comicinfo.py        # ComicInfo.xml generation
-│   ├── folder.py           # Folder-based metadata extraction
+│   ├── path.py             # Path-based metadata extraction
 │   └── comicvine/          # Comic Vine API integration
 │       ├── __init__.py
 │       └── client.py
@@ -45,11 +56,45 @@ bdlib/
 
 This project uses `uv` and `virtualenv` for dependency management:
 
-- **Setup**: `virtualenv .venv && source .venv/bin/activate && uv pip install -r requirements.txt`
+- **Setup**: `virtualenv .venv && source .venv/bin/activate && uv pip install -e ".[dev]"`
 - **Dev deps**: `uv pip install pytest ruff mypy`
+- **CBR support**: `uv pip install -e ".[cbr]"` (requires unrar system package)
 - **Testing**: `pytest` or `python -m pytest`
 - **Linting**: `ruff check .`
 - **Typecheck**: `mypy bdlib`
+
+## Naming Conventions
+
+### Supported Patterns
+
+The metadata extractor (`path.py`) recognizes these naming patterns:
+
+| Pattern | Number | Title |
+|---------|--------|-------|
+| `01 - Issue Title` | 1 | "Issue Title" |
+| `01` | 1 | None |
+| `Vol. 01` | 1 | None |
+| `Tome 01` | 1 | None |
+| `Volume 01` | 1 | None |
+
+### Customizing Patterns
+
+Regex patterns can be customized via module-level constants or function argument:
+
+```python
+# Method 1: Override module-level constants
+from bdlib.metadata import path
+path.PATTERN_WITH_TITLE = r"(\d+)\s*#\s*(.+)"
+path.PATTERN_NUMBER_ONLY = r"#(\d+)"
+
+# Method 2: Pass patterns tuple to function
+from bdlib.metadata import extract_folder_metadata
+meta = extract_folder_metadata(
+    folder,
+    archive_path=archive,
+    patterns=(r"(\d+)#(.+)", r"#(\d+)", r"T(\d+)")
+)
+```
 
 ## Key Patterns
 
@@ -72,11 +117,26 @@ class MyPlugin(CliPlugin):
     def handle_arguments(self, args: Namespace) -> dict: ...
 ```
 
-### 2. Data Models
+### 2. Archive Extractors
+
+Archive extraction uses a factory pattern with individual extractors per format:
+
+```python
+from bdlib.converters.archive import is_archive, extract_archive, get_extractor
+
+# Check if path is an archive
+if is_archive(path):
+    extractor = get_extractor(path)
+    extractor.extract(path, output_dir)
+```
+
+Each extractor follows the `ArchiveExtractor` interface in `base.py`.
+
+### 3. Data Models
 
 `ComicMetadata` is a `@dataclass` in `models.py`. All fields are Optional with sensible defaults. Includes `to_dict()` and `merge()` methods.
 
-### 3. Converters Pattern
+### 4. Converters Pattern
 
 Converters are organized in `bdlib/converters/` with a public `__init__.py` that exports the API:
 
@@ -87,11 +147,11 @@ from bdlib.converters.my_converter import my_function
 __all__ = ["my_function"]
 ```
 
-### 4. Metadata Pattern
+### 5. Metadata Pattern
 
 Metadata modules follow the same pattern as converters - organized subpackage with `__init__.py` exports.
 
-### 5. Tests
+### 6. Tests
 
 - Location: `tests/` directory
 - Fixtures: `tests/conftest.py`
@@ -99,6 +159,27 @@ Metadata modules follow the same pattern as converters - organized subpackage wi
 - Run: `pytest` (with venv activated)
 
 ## How to Extend the Project
+
+### Adding a New Archive Format
+
+1. Create `bdlib/converters/archive/my_format.py`
+2. Implement `ArchiveExtractor` interface:
+
+```python
+from pathlib import Path
+from bdlib.converters.archive.base import ArchiveExtractor
+
+class MyExtractor(ArchiveExtractor):
+    @property
+    def extensions(self) -> list[str]:
+        return [".myfmt", ".MYFMT"]
+
+    def extract(self, archive_path: Path, output_dir: Path) -> Path:
+        # Extraction logic
+        return output_dir
+```
+
+3. Register in `bdlib/converters/archive/__init__.py`
 
 ### Adding a New Converter
 

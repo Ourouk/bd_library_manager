@@ -10,20 +10,29 @@ source .venv/bin/activate
 # Install with dependencies
 uv pip install -e .
 
-# Or install just dependencies
-uv pip install requests Pillow jxlpy pylibjxl numpy onnxruntime-gpu
+# Optional: CBR (RAR) support
+uv pip install -e ".[cbr]"
+apt install unrar  # or brew install unrar on macOS
 ```
 
 ## Quick Start
 
 ```python
+from pathlib import Path
 from bdlib import ComicMetadata, generate_comicinfo
 from bdlib.converters import jpeg_to_jxl, cbz
+from bdlib.converters.archive import extract_archive, is_archive
 
-# 1. Convert images to JXL
+# Process folder
 jpeg_to_jxl.batch_convert("input_folder/", "output_folder/", quality=90)
 
-# 2. Generate ComicInfo.xml
+# Or process archive (CBZ/CBR/CB7)
+if is_archive(Path("comic.cbz")):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        extract_dir = extract_archive(Path("comic.cbz"), Path(tmpdir) / "extracted")
+        # ... process extracted files
+
+# Generate ComicInfo.xml
 xml = generate_comicinfo(
     title="The Killing Joke",
     series="Batman",
@@ -34,15 +43,23 @@ xml = generate_comicinfo(
 with open("output/ComicInfo.xml", "w") as f:
     f.write(xml)
 
-# 3. Create CBZ archive
+# Create CBZ archive
 cbz.create_cbz("output/", "comic.cbz")
 ```
 
 ## CLI Usage
 
 ```bash
-# Full batch workflow
+# Full batch workflow (processes folders AND archives)
 bdlib ./comics
+
+# Single folder processing
+bdlib ./comics/Batman/01 --single
+
+# Single archive processing
+bdlib ./comics/Batman/01.cbz --single
+bdlib ./comics/Batman/01.cbr --single
+bdlib ./comics/Batman/01.cb7 --single
 
 # With JPEG artifact removal (DeJPEG with CUDA)
 bdlib ./comics --dejpeg -t 1
@@ -53,9 +70,6 @@ bdlib ./comics --dejpeg
 # With Comic Vine enrichment
 bdlib ./comics --comicvine
 
-# Single folder processing
-bdlib ./comics/Batman/01 --single
-
 # Custom options
 bdlib ./comics -q 85 -t 8 --lossless -o ./output
 ```
@@ -64,13 +78,13 @@ bdlib ./comics -q 85 -t 8 --lossless -o ./output
 
 | Flag | Description | Default |
 |------|-------------|---------|
-| `input` | Input folder or file | Required |
+| `input` | Input folder, archive, or directory | Required |
 | `-q, --quality` | JXL quality 1-100 | 90 |
 | `-l, --lossless` | Use lossless compression | False |
 | `-k, --keep-jxl` | Keep intermediate JXL files | False |
-| `--single` | Process single folder | False |
+| `--single` | Process single folder/archive | False |
 | `-o, --output-folder` | Output directory | Same as input |
-| `-t, --threads` | Thread count for conversion | 4 |
+| `-t, --threads` | Thread count for DeJPEG | 1 |
 | `--dejpeg` | Enable JPEG artifact removal | False |
 | `--dejpeg-model` | DeJPEG model to use | fbcnn_color |
 | `-jt, --jxl-threads` | JXL encoding threads | 4 |
@@ -208,6 +222,40 @@ data = meta.to_dict()
 
 ### Converters
 
+#### `bdlib.converters.archive`
+
+```python
+from bdlib.converters.archive import (
+    extract_archive,
+    is_archive,
+    get_extractor,
+    SUPPORTED_EXTENSIONS,
+)
+
+# Check if a file is a supported archive
+if is_archive(Path("comic.cbz")):
+    print("Is archive")
+
+# Get the appropriate extractor for an archive
+extractor = get_extractor(Path("comic.cbz"))
+# extractor.extract(archive_path, output_dir)
+
+# Supported extensions
+print(SUPPORTED_EXTENSIONS)
+# ['.cbz', '.CBZ', '.cbr', '.CBR', '.cb7', '.CB7']
+
+# Extract archive to directory
+extract_archive(
+    archive_path=Path("comic.cbz"),
+    output_dir=Path("./extracted/"),
+)
+```
+
+**Supported formats:**
+- **CBZ**: ZIP archive (uses stdlib `zipfile`)
+- **CBR**: RAR archive (requires `rarfile` + `unrar`)
+- **CB7**: 7z archive (uses `py7zr`)
+
 #### `bdlib.converters.jpeg_to_jxl`
 
 ```python
@@ -286,6 +334,34 @@ info = get_image_info(Path("page.jpg"))
 # Returns: {'width': 1920, 'height': 2880, 'size': 123456}
 ```
 
+#### `bdlib.metadata.path`
+
+```python
+from bdlib.metadata import extract_folder_metadata
+from pathlib import Path
+
+# Extract from folder
+meta = extract_folder_metadata(Path("comics/Batman/01 - Knightfall"))
+
+# Extract from archive (after extraction)
+meta = extract_folder_metadata(
+    extracted_folder=Path("/tmp/extracted/"),
+    archive_path=Path("comics/Batman/01 - Knightfall.cbz"),
+)
+# Series will be "Batman" (from archive's parent)
+# Number and title parsed from archive stem
+
+# Custom regex patterns
+meta = extract_folder_metadata(
+    Path("folder"),
+    patterns=(
+        r"(\d+)\s*#\s*(.+)",  # with title pattern
+        r"#(\d+)",            # number only pattern
+        r"T(\d+)",            # volume/tome pattern
+    )
+)
+```
+
 #### `bdlib.metadata.comicvine`
 
 ```python
@@ -345,7 +421,7 @@ Config is stored in `~/.bd_library_manager/config.json`.
 
 ## Folder Structure
 
-For batch processing, expected structure:
+For batch processing, expected structure (folders and archives mixed):
 
 ```
 comics/
@@ -353,14 +429,42 @@ comics/
 │   ├── 01 - Issue Title/
 │   │   ├── 01.jpg
 │   │   └── 02.jpg
-│   └── 02 - Another Title/
-│       └── ...
+│   ├── 02 - Another Title.cbz
+│   ├── 03.cbz
+│   └── 04 - Knightfall.cbz
 ```
 
+### Supported Patterns
+
+| Pattern | Number | Title |
+|---------|--------|-------|
+| `01 - Issue Title` | 1 | "Issue Title" |
+| `01` | 1 | None |
+| `Vol. 01` | 1 | None |
+| `Tome 01` | 1 | None |
+| `Volume 01` | 1 | None |
+
 The CLI extracts:
-- **Series**: Parent folder name (`Series Name`)
-- **Number**: First number in folder name (`01`)
-- **Title**: Text after dash (`Issue Title`)
+- **Series**: Parent folder name
+- **Number**: Parsed from folder/archive name
+- **Title**: Parsed from folder/archive name (if present)
+
+### Customizing Patterns
+
+```python
+from bdlib.metadata import path
+
+# Override module-level patterns
+path.PATTERN_WITH_TITLE = r"(\d+)\s*#\s*(.+)"
+path.PATTERN_NUMBER_ONLY = r"#(\d+)"
+
+# Or pass custom patterns to the function
+from bdlib.metadata import extract_folder_metadata
+meta = extract_folder_metadata(
+    folder,
+    patterns=(r"(\d+)#(.+)", r"#(\d+)", r"T(\d+)")
+)
+```
 
 ## Error Handling
 

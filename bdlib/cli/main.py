@@ -5,12 +5,14 @@ Command-line interface for BD Library Manager.
 
 import argparse
 import shutil
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from bdlib.cli.dto import ConverterConfig, MetadataConfig, ProcessingConfig
 from bdlib.config import cache_series_info, get_cached_series
 from bdlib.converters import cbz, dejpeg, jpeg_to_jxl
+from bdlib.converters.archive import is_archive
 from bdlib.log import get_logger
 from bdlib.metadata import extract_folder_metadata
 from bdlib.metadata.comicinfo import generate_comicinfo
@@ -107,10 +109,20 @@ def get_comicvine_metadata(
     return None
 
 
-def find_folders(input_path: Path, single: bool) -> List[Path]:
-    """Find folders to process."""
+def find_inputs(input_path: Path, single: bool) -> List[Path]:
+    """Find folders or archives to process."""
     if single:
         return [input_path]
+    elif input_path.is_dir():
+        items = []
+        for item in input_path.iterdir():
+            if item.is_dir() and not is_archive(item):
+                items.append(item)
+            elif is_archive(item):
+                items.append(item)
+        return sorted(items, key=lambda p: p.name)
+    elif is_archive(input_path):
+        return [input_path.parent]
     elif input_path.is_dir() and not any(input_path.glob("*.jpg")):
         return sorted([d for d in input_path.iterdir() if d.is_dir()])
     else:
@@ -123,6 +135,7 @@ def process_folder(
     converter_config: ConverterConfig,
     metadata_config: MetadataConfig,
     series_cache: Optional[dict] = None,
+    archive_path: Optional[Path] = None,
 ):
     """Process a single folder of JPEG images to create a JXL-based CBZ archive."""
     logger.info(f"Processing: {folder.name}")
@@ -134,7 +147,7 @@ def process_folder(
         logger.warning("No JPEG files found, skipping...")
         return False
 
-    folder_metadata = extract_folder_metadata(folder)
+    folder_metadata = extract_folder_metadata(folder, archive_path)
 
     cv_metadata = None
     if metadata_config.client and series_cache is not None:
@@ -237,6 +250,43 @@ def process_folder(
     return True
 
 
+def process_archive(
+    archive: Path,
+    processing_config: ProcessingConfig,
+    converter_config: ConverterConfig,
+    metadata_config: MetadataConfig,
+    series_cache: Optional[dict] = None,
+):
+    """Extract archive and process images to create a JXL-based CBZ."""
+    from bdlib.converters.archive import extract_archive
+
+    logger.info(f"Extracting archive: {archive.name}")
+
+    archive_stem = archive.stem
+
+    try:
+        with tempfile.TemporaryDirectory(prefix="bdlib_") as temp_dir:
+            extract_dir = Path(temp_dir) / archive_stem
+            extract_archive(archive, extract_dir)
+
+            logger.info(f"Processing extracted archive: {archive_stem}")
+            result = process_folder(
+                extract_dir,
+                processing_config,
+                converter_config,
+                metadata_config,
+                series_cache,
+                archive_path=archive,
+            )
+            return result
+    except ImportError as e:
+        logger.error(f"Missing dependency for archive extraction: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Archive processing failed: {e}")
+        return False
+
+
 def main():
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(description="Batch process comic folders")
@@ -271,18 +321,28 @@ def main():
                     series_cache[name] = info
             logger.info(f"Loaded {len(series_cache)} cached series")
 
-    folders = find_folders(Path(processing_config.input), processing_config.single)
-    logger.info(f"Found {len(folders)} folder(s) to process")
+    folders = find_inputs(Path(processing_config.input), processing_config.single)
+    logger.info(f"Found {len(folders)} item(s) to process")
 
     success = 0
-    for folder in folders:
-        if process_folder(
-            folder,
-            processing_config,
-            converter_config,
-            metadata_config,
-            series_cache,
-        ):
+    for item in folders:
+        if is_archive(item):
+            result = process_archive(
+                item,
+                processing_config,
+                converter_config,
+                metadata_config,
+                series_cache,
+            )
+        else:
+            result = process_folder(
+                item,
+                processing_config,
+                converter_config,
+                metadata_config,
+                series_cache,
+            )
+        if result:
             success += 1
 
     if metadata_config.enabled_sources and series_cache:
@@ -291,7 +351,7 @@ def main():
                 cache_series_info(name, info)
         logger.info(f"Saved {len(series_cache)} series to cache")
 
-    logger.info(f"Completed: {success}/{len(folders)} folders processed")
+    logger.info(f"Completed: {success}/{len(folders)} items processed")
 
 
 if __name__ == "__main__":

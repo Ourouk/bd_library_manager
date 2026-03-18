@@ -46,3 +46,15 @@ def temp_image_folder(tmp_path, sample_image_files):
         dst.write_bytes(src.read_bytes())
 
     return img_dir
+
+
+@pytest.fixture
+def sample_cbz_archive():
+    """Return path to the sample CBZ archive."""
+    return Path(__file__).parent / "sample" / "Dune - Chroniques d'Arrakeen" / "01.cbz"
+
+
+@pytest.fixture
+def sample_cbr_archive():
+    """Return path to the sample CBR archive."""
+    return Path(__file__).parent / "sample" / "L'éveil du Kurran" / "01.cbr"

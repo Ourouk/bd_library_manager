@@ -8,7 +8,7 @@ from bdlib.cli.dto import ProcessingConfig
 class GeneralPlugin(CliPlugin):
     def register_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "input", help='Input folder or file pattern (e.g., ./comics or "./comics/*")'
+            "input", help="Input folder, archive (.cbz/.cbr/.cb7), or directory containing them"
         )
         parser.add_argument(
             "--single",
