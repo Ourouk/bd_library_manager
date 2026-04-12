@@ -165,6 +165,16 @@ def map_to_comicinfo(issue_data: dict[str, Any], volume_data: dict[str, Any] | N
             result.genre = genre
         if count := volume_data.get("count_of_issues"):
             result.count = count
+
+    if character_credits := issue_data.get("character_credits"):
+        result.characters = ", ".join([c["name"] for c in character_credits if "name" in c])
+
+    if team_credits := issue_data.get("team_credits"):
+        result.teams = ", ".join([t["name"] for t in team_credits if "name" in t])
+
+    if location_credits := issue_data.get("location_credits"):
+        result.locations = ", ".join([l["name"] for l in location_credits if "name" in l])
+
     return result
 
 

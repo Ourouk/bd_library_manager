@@ -59,6 +59,9 @@ class ComicMetadata:
     imprint: Optional[str] = None
     genre: Optional[str] = None
     summary: Optional[str] = None
+    characters: Optional[str] = None
+    teams: Optional[str] = None
+    locations: Optional[str] = None
     year: Optional[int] = None
     month: Optional[int] = None
     day: Optional[int] = None
