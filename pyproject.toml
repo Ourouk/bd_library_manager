@@ -62,3 +62,6 @@ target-version = "py314"
 
 [tool.ruff.format]
 skip-magic-trailing-comma = true
+
+[tool.mypy]
+ignore_missing_imports = true
