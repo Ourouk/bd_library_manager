@@ -83,7 +83,7 @@ def _download_model() -> Path:
     try:
         import urllib.request
 
-        def download_progress(count, block_size, total_size):
+        def download_progress(count: int, block_size: int, total_size: int) -> None:
             if total_size > 0:
                 percent = min(100.0 * count * block_size / total_size, 100.0)
                 if count % 100 == 0:

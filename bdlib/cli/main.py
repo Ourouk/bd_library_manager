@@ -130,7 +130,7 @@ def process_folder(
     metadata_config: MetadataConfig,
     series_cache: dict[str, Any] | None = None,
     archive_path: Path | None = None,
-):
+) -> bool:
     """Process a single folder of JPEG images to create a JXL-based CBZ archive."""
     logger.info(f"Processing: {folder.name}")
 
@@ -237,7 +237,7 @@ def process_archive(
     converter_config: ConverterConfig,
     metadata_config: MetadataConfig,
     series_cache: dict[str, Any] | None = None,
-):
+) -> bool:
     """Extract archive and process images to create a JXL-based CBZ."""
     from bdlib.converters.archive import extract_archive
 
@@ -263,7 +263,7 @@ def process_archive(
         return False
 
 
-def main():
+def main() -> None:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(description="Batch process comic folders")
 

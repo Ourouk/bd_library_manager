@@ -319,7 +319,7 @@ def batch_convert(
     failed_count = 0
     page_infos: list[PageInfo] = []
 
-    def process_one(jpeg_file):
+    def process_one(jpeg_file: Path) -> None:
         nonlocal processed_count, failed_count
         file_start = time.time()
         page_info = process_file(jpeg_file, output_dir, model_instance, output_jxl, jxl_quality, jxl_lossless)

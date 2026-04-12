@@ -3,7 +3,7 @@
 ComicInfo.xml generation.
 """
 
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from bdlib.dto import ComicMetadata, PageInfo
 from bdlib.log import get_logger
@@ -57,7 +57,7 @@ def generate_comicinfo(
     xml = '<?xml version="1.0" encoding="utf-8"?>\n'
     xml += '<ComicInfo xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">\n'
 
-    def add_field(name, value):
+    def add_field(name: str, value: Any) -> None:
         nonlocal xml
         if value is not None:
             xml_name = "".join(word.capitalize() for word in name.split("_"))

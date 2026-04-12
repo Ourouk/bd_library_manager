@@ -228,7 +228,7 @@ class Waifu2xModel:
         try:
             import urllib.request
 
-            def download_progress(count, block_size, total_size):
+            def download_progress(count: int, block_size: int, total_size: int) -> None:
                 if total_size > 0:
                     percent = min(100.0 * count * block_size / total_size, 100.0)
                     if count % 100 == 0:
@@ -283,7 +283,7 @@ class Waifu2xModel:
             scale=self.config.scale_factor,
         )
 
-        def process_fn(tile):
+        def process_fn(tile: np.ndarray) -> np.ndarray:
             return self._process_tile(tile)
 
         result = tiled_process(img_array, process_fn, tiled_config)

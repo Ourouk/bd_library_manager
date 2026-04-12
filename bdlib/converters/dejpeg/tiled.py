@@ -15,13 +15,13 @@ from typing import Callable, Protocol, Tuple, TypeVar
 import numpy as np
 from PIL import Image
 
-T = TypeVar("T")
+T_co = TypeVar("T_co", covariant=True)
 
 
-class TileProcessor(Protocol[T]):
+class TileProcessor(Protocol[T_co]):
     """Protocol for tile processing functions."""
 
-    def __call__(self, tile: np.ndarray) -> T: ...
+    def __call__(self, tile: np.ndarray) -> T_co: ...
 
 
 @dataclass

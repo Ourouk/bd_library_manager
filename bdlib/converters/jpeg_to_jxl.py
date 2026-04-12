@@ -24,7 +24,7 @@ def quality_to_distance(quality: int) -> float:
     return max(0.1, (100 - quality) / 100 * 15)
 
 
-def convert_jpeg_to_jxl(input_path: Path, output_path: Path, quality: int = 90, lossless: bool = True):
+def convert_jpeg_to_jxl(input_path: Path, output_path: Path, quality: int = 90, lossless: bool = True) -> bool:
     """
     Converts a single image (JPEG or PNG) to JXL format.
     Args:
@@ -39,18 +39,16 @@ def convert_jpeg_to_jxl(input_path: Path, output_path: Path, quality: int = 90, 
             if input_suffix in (".jpg", ".jpeg"):
                 pylibjxl.convert_jpeg_to_jxl(str(input_path), str(output_path))
             else:
-                with Image.open(input_path) as img:
-                    if img.mode != "RGB":
-                        img = img.convert("RGB")
+                with Image.open(input_path) as _img:
+                    img = _img.convert("RGB") if _img.mode != "RGB" else _img
                     arr = np.array(img)
                 jxl_data = pylibjxl.encode(arr, effort=7, distance=0.0, lossless=True)
                 with open(output_path, "wb") as f:
                     f.write(jxl_data)
         else:
             distance = quality_to_distance(quality)
-            with Image.open(input_path) as img:
-                if img.mode != "RGB":
-                    img = img.convert("RGB")
+            with Image.open(input_path) as _img:
+                img = _img.convert("RGB") if _img.mode != "RGB" else _img
                 arr = np.array(img)
             jxl_data = pylibjxl.encode(arr, effort=7, distance=distance, lossless=False)
             with open(output_path, "wb") as f:
@@ -61,7 +59,7 @@ def convert_jpeg_to_jxl(input_path: Path, output_path: Path, quality: int = 90, 
         return False
 
 
-def process_file(jpeg_file, output_dir, quality, lossless):
+def process_file(jpeg_file: Path, output_dir: Path, quality: int, lossless: bool) -> None:
     output_file = output_dir / (jpeg_file.stem + ".jxl")
     if convert_jpeg_to_jxl(jpeg_file, output_file, quality, lossless):
         logger.info(f"Converted {jpeg_file.name} -> {output_file.name} ... OK")
@@ -69,7 +67,9 @@ def process_file(jpeg_file, output_dir, quality, lossless):
         logger.error(f"Converted {jpeg_file.name} -> {output_file.name} ... FAILED")
 
 
-def batch_convert(input_dir: Path, output_dir: Path, quality: int = 90, lossless: bool = True, max_threads: int = 4):
+def batch_convert(
+    input_dir: Path, output_dir: Path, quality: int = 90, lossless: bool = True, max_threads: int = 4
+) -> None:
     """
     Converts all JPEG images in a directory to JXL format using multiple threads.
     Args:
