@@ -1,4 +1,4 @@
-# BD Library Manager
+# Boite à bulles
 
 A Python library and CLI tool for automating comic archive preparation.
 
