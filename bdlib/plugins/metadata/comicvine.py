@@ -14,16 +14,10 @@ class ComicVinePlugin(MetadataPlugin):
 
     def register_arguments(self, parser: ArgumentParser) -> None:
         parser.add_argument(
-            "--comicvine",
-            action="store_true",
-            help="Enrich metadata using Comic Vine API (requires API key)",
+            "--comicvine", action="store_true", help="Enrich metadata using Comic Vine API (requires API key)"
         )
-        parser.add_argument(
-            "--country", type=str, help="Country code for ComicInfo.xml (e.g., FR, US, GB)"
-        )
-        parser.add_argument(
-            "--language", type=str, help="Language ISO code for ComicInfo.xml (e.g., fr, en, es)"
-        )
+        parser.add_argument("--country", type=str, help="Country code for ComicInfo.xml (e.g., FR, US, GB)")
+        parser.add_argument("--language", type=str, help="Language ISO code for ComicInfo.xml (e.g., fr, en, es)")
 
     def handle_arguments(self, args: Namespace) -> dict:
         enabled_sources = []
@@ -31,11 +25,7 @@ class ComicVinePlugin(MetadataPlugin):
             enabled_sources.append(self.name)
 
         return {
-            "metadata": MetadataConfig(
-                enabled_sources=enabled_sources,
-                country=args.country,
-                language=args.language,
-            )
+            "metadata": MetadataConfig(enabled_sources=enabled_sources, country=args.country, language=args.language)
         }
 
     def create_client(self, config: MetadataConfig) -> Optional[Any]:

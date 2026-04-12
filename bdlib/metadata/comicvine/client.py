@@ -72,12 +72,7 @@ class ComicVineClient:
         while True:
             data = self._request(
                 "issues",
-                {
-                    "filter": f"volume:{volume_id}",
-                    "limit": limit,
-                    "offset": offset,
-                    "sort": "issue_number:asc",
-                },
+                {"filter": f"volume:{volume_id}", "limit": limit, "offset": offset, "sort": "issue_number:asc"},
             )
             results = data.get("results", [])
             if not results:
@@ -116,9 +111,7 @@ class ComicVineClient:
         return data.get("results", {})
 
 
-def map_to_comicinfo(
-    issue_data: Dict[str, Any], volume_data: Optional[Dict[str, Any]] = None
-) -> ComicMetadata:
+def map_to_comicinfo(issue_data: Dict[str, Any], volume_data: Optional[Dict[str, Any]] = None) -> ComicMetadata:
     """
     Map Comic Vine issue data to ComicMetadata.
     """

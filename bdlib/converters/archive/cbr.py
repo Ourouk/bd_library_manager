@@ -19,11 +19,7 @@ class CbrExtractor(ArchiveExtractor):
                 rf.extractall(output_dir)
         except ImportError:
             try:
-                subprocess.run(
-                    ["unrar", "x", str(archive_path), str(output_dir)],
-                    check=True,
-                    capture_output=True,
-                )
+                subprocess.run(["unrar", "x", str(archive_path), str(output_dir)], check=True, capture_output=True)
             except FileNotFoundError:
                 raise ImportError(
                     "RAR extraction requires 'unrar' system package and 'rarfile' Python package. "

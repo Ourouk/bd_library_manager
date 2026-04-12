@@ -63,7 +63,7 @@ bdlib ./comics/Batman/01.cbr --single
 bdlib ./comics/Batman/01.cb7 --single
 
 # With JPEG artifact removal (DeJPEG with CUDA)
-bdlib ./comics --dejpeg -t 1
+bdlib ./comics --dejpeg -dt 1
 
 # With DeJPEG on CPU only
 bdlib ./comics --dejpeg
@@ -72,7 +72,7 @@ bdlib ./comics --dejpeg
 bdlib ./comics --comicvine
 
 # Custom options
-bdlib ./comics -q 85 -t 8 --lossless -o ./output
+bdlib ./comics -q 85 -dt 8 --lossless -o ./output
 ```
 
 ### CLI Options
@@ -85,7 +85,7 @@ bdlib ./comics -q 85 -t 8 --lossless -o ./output
 | `-k, --keep-jxl` | Keep intermediate JXL files | False |
 | `--single` | Process single folder/archive | False |
 | `-o, --output-folder` | Output directory | Same as input |
-| `-t, --threads` | Thread count for DeJPEG | 1 |
+| `-dt, --dejpeg-threads` | Thread count for DeJPEG | 1 |
 | `--dejpeg` | Enable JPEG artifact removal | False |
 | `--dejpeg-model` | DeJPEG model to use | fbcnn_color |
 | `-jt, --jxl-threads` | JXL encoding threads | 4 |

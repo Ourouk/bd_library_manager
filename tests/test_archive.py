@@ -3,11 +3,7 @@
 import zipfile
 from pathlib import Path
 
-from bdlib.converters.archive import (
-    SUPPORTED_EXTENSIONS,
-    get_extractor,
-    is_archive,
-)
+from bdlib.converters.archive import SUPPORTED_EXTENSIONS, get_extractor, is_archive
 from bdlib.converters.archive.cb7 import Cb7Extractor
 from bdlib.converters.archive.cbr import CbrExtractor
 from bdlib.converters.archive.cbz import CbzExtractor

@@ -30,14 +30,8 @@ from .fbcnn import FBCNNModel
 from .fbcnn import create as create_fbcnn
 from .protocol import DejpegModel
 from .tiled import TilingConfig, float_array_to_pil, pil_to_float_array  # noqa: F401
-from .waifu2x import (
-    AVAILABLE_MODELS,
-    Waifu2xConfig,
-    Waifu2xModel,
-)
-from .waifu2x import (
-    create as create_waifu2x,
-)
+from .waifu2x import AVAILABLE_MODELS, Waifu2xConfig, Waifu2xModel
+from .waifu2x import create as create_waifu2x
 
 __all__ = [
     "DejpegModel",
@@ -78,27 +72,18 @@ def get_model_info(model_string: str) -> dict:
     config = _parse_model_string(model_string)
 
     if config.model_name == "fbcnn_color":
-        return {
-            "name": "FBCNN Color",
-            "type": "jpeg_artifacts",
-            "description": "Fast JPEG artifact removal",
-        }
+        return {"name": "FBCNN Color", "type": "jpeg_artifacts", "description": "Fast JPEG artifact removal"}
 
     if config.model_name.startswith("waifu2x_"):
         parts = config.model_name.replace("waifu2x_", "").split("_")
         arch = parts[0] if parts else "unknown"
         model_type = "_".join(parts[1:]) if len(parts) > 1 else "unknown"
 
-        type_display = {
-            "art": "Anime/Art",
-            "photo": "Photographic",
-            "art_scan": "Scanned Art",
-        }.get(model_type, model_type)
+        type_display = {"art": "Anime/Art", "photo": "Photographic", "art_scan": "Scanned Art"}.get(
+            model_type, model_type
+        )
 
-        arch_display = {
-            "cunet": "CuNet (Classic)",
-            "swin_unet": "SwinUNet (Modern)",
-        }.get(arch, arch)
+        arch_display = {"cunet": "CuNet (Classic)", "swin_unet": "SwinUNet (Modern)"}.get(arch, arch)
 
         return {
             "name": f"waifu2x {arch_display}",
@@ -138,9 +123,7 @@ def _parse_model_string(model_string: str) -> _ParsedModelConfig:
             else:
                 scale_factor = int(scale_str)
 
-    return _ParsedModelConfig(
-        model_name=model_name, noise_level=noise_level, scale_factor=scale_factor
-    )
+    return _ParsedModelConfig(model_name=model_name, noise_level=noise_level, scale_factor=scale_factor)
 
 
 def create_model(model_string: str) -> tuple:
@@ -234,12 +217,7 @@ def convert_jpeg(
             size = output_path.stat().st_size
 
         logger.debug(f"Processed {input_path.name} -> {output_path.name}")
-        return PageInfo(
-            filename=output_path.name,
-            width=processed_img.width,
-            height=processed_img.height,
-            size=size,
-        )
+        return PageInfo(filename=output_path.name, width=processed_img.width, height=processed_img.height, size=size)
 
     except Exception as e:
         logger.error(f"Error processing {input_path}: {e}")
@@ -277,9 +255,7 @@ def process_file(
     else:
         output_file = output_dir / (jpeg_file.stem + ".png")
 
-    page_info = convert_jpeg(
-        jpeg_file, output_file, model_instance, output_jxl, jxl_quality, jxl_lossless
-    )
+    page_info = convert_jpeg(jpeg_file, output_file, model_instance, output_jxl, jxl_quality, jxl_lossless)
     if page_info:
         logger.info(f"DeJPEG processed {jpeg_file.name} -> {output_file.name} ... OK")
     else:
@@ -329,18 +305,11 @@ def batch_convert(
     if not jpeg_files:
         logger.warning(f"No JPEG files found in {input_dir}")
         return DejpegResult(
-            success=False,
-            model_name="",
-            model_type="",
-            config={},
-            stats={"error": "No JPEG files found"},
-            pages=[],
+            success=False, model_name="", model_type="", config={}, stats={"error": "No JPEG files found"}, pages=[]
         )
 
     model_info = get_model_info(model_string)
-    logger.info(
-        f"DeJPEG model: {model_info['name']} - {model_info.get('description', model_info['type'])}"
-    )
+    logger.info(f"DeJPEG model: {model_info['name']} - {model_info.get('description', model_info['type'])}")
 
     model_instance, config = create_model(model_string)
     logger.debug(f"Model config: {config}")
@@ -353,9 +322,7 @@ def batch_convert(
     def process_one(jpeg_file):
         nonlocal processed_count, failed_count
         file_start = time.time()
-        page_info = process_file(
-            jpeg_file, output_dir, model_instance, output_jxl, jxl_quality, jxl_lossless
-        )
+        page_info = process_file(jpeg_file, output_dir, model_instance, output_jxl, jxl_quality, jxl_lossless)
         file_duration = time.time() - file_start
 
         if page_info:
@@ -371,9 +338,7 @@ def batch_convert(
     logger.info(f"Found {len(jpeg_files)} JPEG files to process with DeJPEG")
 
     with ThreadPoolExecutor(max_workers=max_threads) as executor:
-        future_to_file = {
-            executor.submit(process_one, jpeg_file): jpeg_file for jpeg_file in jpeg_files
-        }
+        future_to_file = {executor.submit(process_one, jpeg_file): jpeg_file for jpeg_file in jpeg_files}
 
         for future in as_completed(future_to_file):
             jpeg_file = future_to_file[future]

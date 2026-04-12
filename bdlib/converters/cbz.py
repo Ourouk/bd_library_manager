@@ -14,9 +14,7 @@ logger = get_logger(__name__)
 IMAGE_EXTENSIONS = ["*.jpg", "*.jpeg", "*.JPG", "*.JPEG", "*.jxl", "*.JXL"]
 
 
-def create_cbz(
-    input_dir: Path, output_path: Optional[Path] = None, comic_info: Optional[Path] = None
-):
+def create_cbz(input_dir: Path, output_path: Optional[Path] = None, comic_info: Optional[Path] = None):
     """
     Creates a CBZ archive from a directory of images.
 

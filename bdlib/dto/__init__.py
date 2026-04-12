@@ -2,8 +2,4 @@
 
 from bdlib.dto.comic_metadata import ComicMetadata, ConversionResult, PageInfo
 
-__all__ = [
-    "ComicMetadata",
-    "ConversionResult",
-    "PageInfo",
-]
+__all__ = ["ComicMetadata", "ConversionResult", "PageInfo"]

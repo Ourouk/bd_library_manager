@@ -26,9 +26,7 @@ logger = get_logger(__name__)
 
 MODEL_CACHE_DIR = Path.home() / ".cache" / "bdlib" / "models"
 
-FBCNN_COLOR_URL = (
-    "https://huggingface.co/colpona/dejpeg-models/resolve/main/fbcnn/fbcnn_color_fp16.onnx"
-)
+FBCNN_COLOR_URL = "https://huggingface.co/colpona/dejpeg-models/resolve/main/fbcnn/fbcnn_color_fp16.onnx"
 
 
 def _check_cuda_available() -> bool:
@@ -55,9 +53,7 @@ def _get_ort_session(model_path: Path) -> ort.InferenceSession:
     if use_cuda:
         sess_options.intra_op_num_threads = 1
         sess_options.inter_op_num_threads = 1
-        providers: list = [
-            ("CUDAExecutionProvider", {"device_id": 0, "cudnn_conv_algo_search": "EXHAUSTIVE"})
-        ]
+        providers: list = [("CUDAExecutionProvider", {"device_id": 0, "cudnn_conv_algo_search": "EXHAUSTIVE"})]
         providers.append("CPUExecutionProvider")
     else:
         sess_options.intra_op_num_threads = 20

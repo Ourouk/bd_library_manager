@@ -55,12 +55,7 @@ class TilingConfig:
     original_w: int
 
 
-def create_blend_filter(
-    blend_size: int,
-    tile_size: int,
-    scale: int,
-    channels: int,
-) -> np.ndarray:
+def create_blend_filter(blend_size: int, tile_size: int, scale: int, channels: int) -> np.ndarray:
     """
     Create a weight filter for blending overlapping tile edges.
 
@@ -85,22 +80,13 @@ def create_blend_filter(
 
     for i in range(blend_size):
         value = (1 / (blend_size + 1)) * (i + 1)
-        weight = np.pad(
-            weight,
-            ((0, 0), (1, 1), (1, 1)),
-            mode="constant",
-            constant_values=value,
-        )
+        weight = np.pad(weight, ((0, 0), (1, 1), (1, 1)), mode="constant", constant_values=value)
 
     return weight.astype(np.float32)
 
 
 def calculate_tiling_config(
-    image_shape: Tuple[int, int],
-    tile_size: int,
-    offset: int,
-    blend_size: int,
-    scale: int,
+    image_shape: Tuple[int, int], tile_size: int, offset: int, blend_size: int, scale: int
 ) -> TilingConfig:
     """
     Calculate tiling configuration for an image.
@@ -174,21 +160,13 @@ def pad_image(image: np.ndarray, pad: Tuple[int, int, int, int]) -> np.ndarray:
 
     left, right, top, bottom = pad
 
-    padded = np.pad(
-        image,
-        ((0, 0), (top, bottom), (left, right)),
-        mode="edge",
-    )
+    padded = np.pad(image, ((0, 0), (top, bottom), (left, right)), mode="edge")
 
     return padded
 
 
 def split_into_tiles(
-    padded_image: np.ndarray,
-    tile_size: int,
-    h_blocks: int,
-    w_blocks: int,
-    input_tile_step: int,
+    padded_image: np.ndarray, tile_size: int, h_blocks: int, w_blocks: int, input_tile_step: int
 ) -> List[TileInfo]:
     """
     Split a padded image into overlapping tiles.
@@ -234,9 +212,7 @@ def split_into_tiles(
 
 
 def blend_and_assemble(
-    processed_tiles: List[np.ndarray],
-    tile_infos: List[TileInfo],
-    config: TilingConfig,
+    processed_tiles: List[np.ndarray], tile_infos: List[TileInfo], config: TilingConfig
 ) -> np.ndarray:
     """
     Blend processed tiles back into a single image using seam blending.
@@ -259,9 +235,7 @@ def blend_and_assemble(
     blend_filter = None
     if config.blend_size > 0:
         processed_tile_size = processed_tiles[0].shape[2]
-        blend_filter = create_blend_filter(
-            config.blend_size, processed_tile_size, config.scale, channels
-        )
+        blend_filter = create_blend_filter(config.blend_size, processed_tile_size, config.scale, channels)
 
     for tile_data, tile_info in zip(processed_tiles, tile_infos):
         h_out_start = tile_info.h_start * config.scale
@@ -308,9 +282,7 @@ def blend_and_assemble(
 
 
 def tiled_process(
-    image: np.ndarray,
-    process_fn: Callable[[np.ndarray], np.ndarray],
-    config: TilingConfig,
+    image: np.ndarray, process_fn: Callable[[np.ndarray], np.ndarray], config: TilingConfig
 ) -> np.ndarray:
     """
     Process an image using tiled inference with seam blending.

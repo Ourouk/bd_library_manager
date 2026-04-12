@@ -18,12 +18,7 @@ class TestComicMetadata:
     def test_init_with_values(self):
         """Test initialization with values."""
         meta = ComicMetadata(
-            title="The Killing Joke",
-            series="Batman",
-            number=1,
-            writer="Alan Moore",
-            artist="Brian Bolland",
-            year=1988,
+            title="The Killing Joke", series="Batman", number=1, writer="Alan Moore", artist="Brian Bolland", year=1988
         )
         assert meta.title == "The Killing Joke"
         assert meta.series == "Batman"

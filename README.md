@@ -60,7 +60,7 @@ For GPU acceleration (recommended for DeJPEG):
 
 ## Requirements
 
-- Python 3.10+
+- Python 3.14+
 - `cjxl` (from libjxl) in PATH for some operations
 - Python packages: `requests`, `Pillow`, `jxlpy`, `pylibjxl`, `numpy`, `onnxruntime-gpu`, `py7zr`
 - Optional: `rarfile` + `unrar` for CBR support
@@ -85,13 +85,13 @@ bdlib /path/to/comic.cb7 --single
 bdlib /path/to/comics --dejpeg
 
 # With DeJPEG and CUDA (default with GPU)
-bdlib /path/to/comics --dejpeg -t 1
+bdlib /path/to/comics --dejpeg -dt 1
 
 # With Comic Vine enrichment
 bdlib /path/to/comics --comicvine
 
 # Custom quality and threads
-bdlib /path/to/comics -q 85 -t 8
+bdlib /path/to/comics -q 85 -dt 8
 ```
 
 ### DeJPEG Options

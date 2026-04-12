@@ -2,8 +2,4 @@
 
 from bdlib.dto.cli import ConverterConfig, MetadataConfig, ProcessingConfig
 
-__all__ = [
-    "ConverterConfig",
-    "MetadataConfig",
-    "ProcessingConfig",
-]
+__all__ = ["ConverterConfig", "MetadataConfig", "ProcessingConfig"]

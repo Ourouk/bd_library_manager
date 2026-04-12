@@ -23,9 +23,7 @@ PATTERN_VOLUME = r"(?:vol(?:ume)?\.?\s*|tome\s*|volume\s*)(\d+)"
 
 
 def extract_folder_metadata(
-    folder: Path,
-    archive_path: Optional[Path] = None,
-    patterns: Optional[Tuple[str, str, str]] = None,
+    folder: Path, archive_path: Optional[Path] = None, patterns: Optional[Tuple[str, str, str]] = None
 ) -> ComicMetadata:
     """
     Extracts metadata from the folder structure or archive name.
@@ -78,8 +76,4 @@ def extract_folder_metadata(
                 number = None
                 title = None
 
-    return ComicMetadata(
-        series=series_name,
-        number=number,
-        title=title,
-    )
+    return ComicMetadata(series=series_name, number=number, title=title)

@@ -24,9 +24,7 @@ def quality_to_distance(quality: int) -> float:
     return max(0.1, (100 - quality) / 100 * 15)
 
 
-def convert_jpeg_to_jxl(
-    input_path: Path, output_path: Path, quality: int = 90, lossless: bool = True
-):
+def convert_jpeg_to_jxl(input_path: Path, output_path: Path, quality: int = 90, lossless: bool = True):
     """
     Converts a single image (JPEG or PNG) to JXL format.
     Args:
@@ -71,13 +69,7 @@ def process_file(jpeg_file, output_dir, quality, lossless):
         logger.error(f"Converted {jpeg_file.name} -> {output_file.name} ... FAILED")
 
 
-def batch_convert(
-    input_dir: Path,
-    output_dir: Path,
-    quality: int = 90,
-    lossless: bool = True,
-    max_threads: int = 4,
-):
+def batch_convert(input_dir: Path, output_dir: Path, quality: int = 90, lossless: bool = True, max_threads: int = 4):
     """
     Converts all JPEG images in a directory to JXL format using multiple threads.
     Args:
@@ -99,9 +91,6 @@ def batch_convert(
 
     logger.info(f"Converting {len(jpeg_files)} files with up to {max_threads} threads...")
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
-        futures = [
-            executor.submit(process_file, jpeg_file, output_dir, quality, lossless)
-            for jpeg_file in jpeg_files
-        ]
+        futures = [executor.submit(process_file, jpeg_file, output_dir, quality, lossless) for jpeg_file in jpeg_files]
         concurrent.futures.wait(futures)
     logger.info("Done.")

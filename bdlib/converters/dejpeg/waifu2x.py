@@ -118,9 +118,7 @@ def parse_model_string(model_string: str) -> Waifu2xConfig:
         arch = parts_split[0] if parts_split else "swin_unet"
         type_part = parts_split[1] if len(parts_split) > 1 else "art"
 
-    return Waifu2xConfig(
-        arch=arch, model_type=type_part, noise_level=noise_level, scale_factor=scale_factor
-    )
+    return Waifu2xConfig(arch=arch, model_type=type_part, noise_level=noise_level, scale_factor=scale_factor)
 
 
 def _check_cuda_available() -> bool:
@@ -147,15 +145,7 @@ def _get_ort_session(model_path: Path) -> ort.InferenceSession:
     if use_cuda:
         sess_options.intra_op_num_threads = 1
         sess_options.inter_op_num_threads = 1
-        providers: list = [
-            (
-                "CUDAExecutionProvider",
-                {
-                    "device_id": 0,
-                    "cudnn_conv_algo_search": "EXHAUSTIVE",
-                },
-            )
-        ]
+        providers: list = [("CUDAExecutionProvider", {"device_id": 0, "cudnn_conv_algo_search": "EXHAUSTIVE"})]
         providers.append("CPUExecutionProvider")
     else:
         sess_options.intra_op_num_threads = 20
@@ -185,10 +175,7 @@ class Waifu2xModel:
         session: Optional[ort.InferenceSession] = None,
     ):
         self.config = Waifu2xConfig(
-            arch=arch,
-            model_type=model_type,
-            noise_level=noise_level,
-            scale_factor=scale_factor,
+            arch=arch, model_type=model_type, noise_level=noise_level, scale_factor=scale_factor
         )
 
         params = WAIFU2X_ARCH_PARAMS.get(arch, WAIFU2X_ARCH_PARAMS["swin_unet"])
@@ -323,8 +310,5 @@ def create(config: Waifu2xConfig | str) -> Waifu2xModel:
         config = parse_model_string(config)
 
     return Waifu2xModel(
-        arch=config.arch,
-        model_type=config.model_type,
-        noise_level=config.noise_level,
-        scale_factor=config.scale_factor,
+        arch=config.arch, model_type=config.model_type, noise_level=config.noise_level, scale_factor=config.scale_factor
     )

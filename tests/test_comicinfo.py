@@ -19,12 +19,7 @@ class TestGenerateComicinfo:
 
     def test_simple_fields(self):
         """Test generating with simple fields."""
-        metadata = ComicMetadata(
-            title="Batman #1",
-            series="Batman",
-            number=1,
-            year=1940,
-        )
+        metadata = ComicMetadata(title="Batman #1", series="Batman", number=1, year=1940)
         result = generate_comicinfo(metadata)
         assert "<Title>Batman #1</Title>" in result
         assert "<Series>Batman</Series>" in result
@@ -70,13 +65,7 @@ class TestGenerateComicinfo:
 
     def test_metadata_object(self):
         """Test using ComicMetadata object."""
-        meta = ComicMetadata(
-            title="From Object",
-            series="Test Series",
-            number=5,
-            writer="Author",
-            year=2021,
-        )
+        meta = ComicMetadata(title="From Object", series="Test Series", number=5, writer="Author", year=2021)
         result = generate_comicinfo(meta)
 
         assert "<Title>From Object</Title>" in result
@@ -103,10 +92,7 @@ class TestPageFiles:
             PageInfo(filename="02.jpg", width=1920, height=2492, size=100000),
         ]
 
-        result = generate_comicinfo(
-            ComicMetadata(title="Test"),
-            page_infos=page_infos,
-        )
+        result = generate_comicinfo(ComicMetadata(title="Test"), page_infos=page_infos)
 
         assert "<Pages>" in result
         assert "</Pages>" in result
@@ -121,10 +107,7 @@ class TestPageFiles:
             PageInfo(filename="03.jpg", width=3000, height=2000, size=150000),
         ]
 
-        result = generate_comicinfo(
-            ComicMetadata(title="Avant l'Incal"),
-            page_infos=page_infos,
-        )
+        result = generate_comicinfo(ComicMetadata(title="Avant l'Incal"), page_infos=page_infos)
 
         assert "<Pages>" in result
         assert 'Image="0"' in result
@@ -135,13 +118,7 @@ class TestPageFiles:
 
     def test_comicinfo_in_cbz(self, temp_image_folder, tmp_path):
         """Test that ComicInfo.xml is properly generated and can be included in CBZ."""
-        metadata = ComicMetadata(
-            title="Test Comic",
-            series="Test Series",
-            number=1,
-            writer="Test Writer",
-            year=2024,
-        )
+        metadata = ComicMetadata(title="Test Comic", series="Test Series", number=1, writer="Test Writer", year=2024)
         xml = generate_comicinfo(metadata)
         comic_info_path = temp_image_folder / "ComicInfo.xml"
         comic_info_path.write_text(xml)

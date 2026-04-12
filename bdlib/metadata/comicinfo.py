@@ -41,9 +41,7 @@ def generate_pages_xml(page_infos: List[PageInfo]) -> str:
 
 
 def generate_comicinfo(
-    metadata: ComicMetadata,
-    page_infos: Optional[List[PageInfo]] = None,
-    denoise_info: Optional[dict] = None,
+    metadata: ComicMetadata, page_infos: Optional[List[PageInfo]] = None, denoise_info: Optional[dict] = None
 ) -> str:
     """
     Generates the full ComicInfo.xml content.

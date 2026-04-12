@@ -44,10 +44,7 @@ def handle_not_found(series_name: str, number: str) -> str:
 
 
 def get_comicvine_metadata(
-    series_name: Optional[str],
-    number: str,
-    metadata_config: MetadataConfig,
-    series_cache: Dict[str, Any],
+    series_name: Optional[str], number: str, metadata_config: MetadataConfig, series_cache: Dict[str, Any]
 ) -> Optional[ComicMetadata]:
     """
     Get metadata from Comic Vine.
@@ -92,11 +89,7 @@ def get_comicvine_metadata(
             issues = comicvine_client.get_volume_issues(volume_id)
             logger.info(f"Found {len(issues)} issues")
 
-            series_cache[series_name] = {
-                "id": volume_id,
-                "name": series_info["name"],
-                "issues": issues,
-            }
+            series_cache[series_name] = {"id": volume_id, "name": series_info["name"], "issues": issues}
 
             issue = find_issue_by_number(issues, number) if number is not None else None
             if issue:
@@ -164,9 +157,7 @@ def process_folder(
 
     dejpeg_result = None
     if converter_config.dejpeg:
-        logger.info(
-            f"Removing JPEG artifacts from {len(jpeg_files)} files using {converter_config.dejpeg_model}..."
-        )
+        logger.info(f"Removing JPEG artifacts from {len(jpeg_files)} files using {converter_config.dejpeg_model}...")
 
         try:
             dejpeg_result = dejpeg.batch_convert(
@@ -186,11 +177,7 @@ def process_folder(
         logger.info(f"Converting {len(jpeg_files)} images to JXL...")
         try:
             jpeg_to_jxl.batch_convert(
-                folder,
-                jxl_folder,
-                converter_config.quality,
-                converter_config.lossless,
-                converter_config.jxl_threads,
+                folder, jxl_folder, converter_config.quality, converter_config.lossless, converter_config.jxl_threads
             )
         except Exception as e:
             logger.error(f"Conversion failed: {e}")
@@ -213,14 +200,7 @@ def process_folder(
             page_infos = []
             for pf in page_files:
                 size = pf.stat().st_size
-                page_infos.append(
-                    PageInfo(
-                        filename=pf.name,
-                        width=0,
-                        height=0,
-                        size=size,
-                    )
-                )
+                page_infos.append(PageInfo(filename=pf.name, width=0, height=0, size=size))
 
     try:
         xml = generate_comicinfo(metadata, page_infos=page_infos, denoise_info=denoise_info)
@@ -271,12 +251,7 @@ def process_archive(
 
             logger.info(f"Processing extracted archive: {archive_stem}")
             result = process_folder(
-                extract_dir,
-                processing_config,
-                converter_config,
-                metadata_config,
-                series_cache,
-                archive_path=archive,
+                extract_dir, processing_config, converter_config, metadata_config, series_cache, archive_path=archive
             )
             return result
     except ImportError as e:
@@ -327,21 +302,9 @@ def main():
     success = 0
     for item in folders:
         if is_archive(item):
-            result = process_archive(
-                item,
-                processing_config,
-                converter_config,
-                metadata_config,
-                series_cache,
-            )
+            result = process_archive(item, processing_config, converter_config, metadata_config, series_cache)
         else:
-            result = process_folder(
-                item,
-                processing_config,
-                converter_config,
-                metadata_config,
-                series_cache,
-            )
+            result = process_folder(item, processing_config, converter_config, metadata_config, series_cache)
         if result:
             success += 1
 

@@ -257,8 +257,8 @@ class ComicMetadata:
 
 ## Important Conventions
 
-- **Python version**: 3.10+ (configured in pyproject.toml)
-- **Line length**: 100 characters (ruff)
+- **Python version**: 3.14+ (configured in pyproject.toml)
+- **Line length**: 120 characters (ruff)
 - **Use ruff** for linting before committing
 - **Type hints**: Optional but encouraged
 - **Entry points**: Must be registered in `pyproject.toml` to be discovered
