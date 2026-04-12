@@ -13,7 +13,7 @@ Customization:
 
 import re
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Tuple
 
 from bdlib.dto import ComicMetadata
 
@@ -23,7 +23,7 @@ PATTERN_VOLUME = r"(?:vol(?:ume)?\.?\s*|tome\s*|volume\s*)(\d+)"
 
 
 def extract_folder_metadata(
-    folder: Path, archive_path: Optional[Path] = None, patterns: Optional[Tuple[str, str, str]] = None
+    folder: Path, archive_path: Path | None = None, patterns: Tuple[str, str, str] | None = None
 ) -> ComicMetadata:
     """
     Extracts metadata from the folder structure or archive name.

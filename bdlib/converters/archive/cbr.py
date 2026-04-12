@@ -1,13 +1,12 @@
 import subprocess
 from pathlib import Path
-from typing import List
 
 from bdlib.converters.archive.base import ArchiveExtractor
 
 
 class CbrExtractor(ArchiveExtractor):
     @property
-    def extensions(self) -> List[str]:
+    def extensions(self) -> list[str]:
         return [".cbr", ".CBR"]
 
     def extract(self, archive_path: Path, output_dir: Path) -> Path:

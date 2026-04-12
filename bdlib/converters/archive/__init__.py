@@ -1,14 +1,13 @@
 from pathlib import Path
-from typing import List
 
 from bdlib.converters.archive.base import ArchiveExtractor
 from bdlib.converters.archive.cb7 import Cb7Extractor
 from bdlib.converters.archive.cbr import CbrExtractor
 from bdlib.converters.archive.cbz import CbzExtractor
 
-ALL_EXTRACTORS: List[ArchiveExtractor] = [CbzExtractor(), CbrExtractor(), Cb7Extractor()]
+ALL_EXTRACTORS: list[ArchiveExtractor] = [CbzExtractor(), CbrExtractor(), Cb7Extractor()]
 
-SUPPORTED_EXTENSIONS: List[str] = []
+SUPPORTED_EXTENSIONS: list[str] = []
 for ext in ALL_EXTRACTORS:
     SUPPORTED_EXTENSIONS.extend(ext.extensions)
 

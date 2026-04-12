@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -22,10 +22,10 @@ class ConverterConfig:
 class MetadataConfig:
     """Configuration for metadata enrichment."""
 
-    enabled_sources: List[str] = field(default_factory=list)
-    country: Optional[str] = None
-    language: Optional[str] = None
-    client: Optional[Any] = None
+    enabled_sources: list[str] = field(default_factory=list)
+    country: str | None = None
+    language: str | None = None
+    client: Any | None = None
 
 
 @dataclass
@@ -33,6 +33,6 @@ class ProcessingConfig:
     """Configuration for input/output processing."""
 
     input: str
-    output_folder: Optional[Path] = None
+    output_folder: Path | None = None
     single: bool = False
     threads: int = 4

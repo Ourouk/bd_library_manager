@@ -8,7 +8,6 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import onnxruntime as ort
@@ -172,7 +171,7 @@ class Waifu2xModel:
         model_type: str = "art",
         noise_level: int = 0,
         scale_factor: int = 1,
-        session: Optional[ort.InferenceSession] = None,
+        session: ort.InferenceSession | None = None,
     ):
         self.config = Waifu2xConfig(
             arch=arch, model_type=model_type, noise_level=noise_level, scale_factor=scale_factor
@@ -184,7 +183,7 @@ class Waifu2xModel:
         self.blend_size = params.blend_size
 
         self._session = session
-        self._model_filename: Optional[str] = None
+        self._model_filename: str | None = None
 
     @property
     def name(self) -> str:

@@ -8,16 +8,16 @@ from bdlib.metadata.comicvine import ComicVineClient, find_issue_by_number, map_
 
 __all__ = [
     "ComicMetadata",
+    "ComicVineClient",
+    "cache_series_info",
+    "cbz",
     "config",
+    "find_issue_by_number",
+    "generate_comicinfo",
     "get_api_key",
-    "set_api_key",
     "get_cached_series",
     "get_cached_series_info",
-    "cache_series_info",
     "jpeg_to_jxl",
-    "cbz",
-    "generate_comicinfo",
-    "ComicVineClient",
     "map_to_comicinfo",
-    "find_issue_by_number",
+    "set_api_key",
 ]

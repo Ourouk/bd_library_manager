@@ -1,13 +1,12 @@
 import zipfile
 from pathlib import Path
-from typing import List
 
 from bdlib.converters.archive.base import ArchiveExtractor
 
 
 class CbzExtractor(ArchiveExtractor):
     @property
-    def extensions(self) -> List[str]:
+    def extensions(self) -> list[str]:
         return [".cbz", ".CBZ"]
 
     def extract(self, archive_path: Path, output_dir: Path) -> Path:

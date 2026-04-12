@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import List
 
 import py7zr
 
@@ -8,7 +7,7 @@ from bdlib.converters.archive.base import ArchiveExtractor
 
 class Cb7Extractor(ArchiveExtractor):
     @property
-    def extensions(self) -> List[str]:
+    def extensions(self) -> list[str]:
         return [".cb7", ".CB7"]
 
     def extract(self, archive_path: Path, output_dir: Path) -> Path:

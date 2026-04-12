@@ -7,7 +7,7 @@ import argparse
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from bdlib.cli.dto import ConverterConfig, MetadataConfig, ProcessingConfig
 from bdlib.config import cache_series_info, get_cached_series
@@ -44,8 +44,8 @@ def handle_not_found(series_name: str, number: str) -> str:
 
 
 def get_comicvine_metadata(
-    series_name: Optional[str], number: str, metadata_config: MetadataConfig, series_cache: Dict[str, Any]
-) -> Optional[ComicMetadata]:
+    series_name: str | None, number: str, metadata_config: MetadataConfig, series_cache: dict[str, Any]
+) -> ComicMetadata | None:
     """
     Get metadata from Comic Vine.
     """
@@ -102,7 +102,7 @@ def get_comicvine_metadata(
     return None
 
 
-def find_inputs(input_path: Path, single: bool) -> List[Path]:
+def find_inputs(input_path: Path, single: bool) -> list[Path]:
     """Find folders or archives to process."""
     if single:
         return [input_path]
@@ -127,8 +127,8 @@ def process_folder(
     processing_config: ProcessingConfig,
     converter_config: ConverterConfig,
     metadata_config: MetadataConfig,
-    series_cache: Optional[dict] = None,
-    archive_path: Optional[Path] = None,
+    series_cache: dict | None = None,
+    archive_path: Path | None = None,
 ):
     """Process a single folder of JPEG images to create a JXL-based CBZ archive."""
     logger.info(f"Processing: {folder.name}")
@@ -235,7 +235,7 @@ def process_archive(
     processing_config: ProcessingConfig,
     converter_config: ConverterConfig,
     metadata_config: MetadataConfig,
-    series_cache: Optional[dict] = None,
+    series_cache: dict | None = None,
 ):
     """Extract archive and process images to create a JXL-based CBZ."""
     from bdlib.converters.archive import extract_archive
@@ -272,7 +272,7 @@ def main():
 
     args = parser.parse_args()
 
-    config: Dict[str, Any] = {}
+    config: dict[str, Any] = {}
     for plugin in plugins:
         config.update(plugin.handle_arguments(args))
 

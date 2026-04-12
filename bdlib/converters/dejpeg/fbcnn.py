@@ -10,7 +10,6 @@ import os
 os.environ["ORT_LOGGING_LEVEL"] = "3"
 
 from pathlib import Path
-from typing import Optional
 
 import numpy as np
 import onnxruntime as ort
@@ -105,7 +104,7 @@ class FBCNNModel:
 
     NAME = "fbcnn_color"
 
-    def __init__(self, session: Optional[ort.InferenceSession] = None):
+    def __init__(self, session: ort.InferenceSession | None = None):
         self._session = session
 
     @property

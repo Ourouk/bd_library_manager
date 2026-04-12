@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List
 
 
 class ArchiveExtractor(ABC):
     @property
     @abstractmethod
-    def extensions(self) -> List[str]:
+    def extensions(self) -> list[str]:
         """Supported file extensions including case variants."""
         pass
 

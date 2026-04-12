@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
-from typing import Callable, List, Protocol, Tuple, TypeVar
+from typing import Callable, Protocol, Tuple, TypeVar
 
 import numpy as np
 from PIL import Image
@@ -167,7 +167,7 @@ def pad_image(image: np.ndarray, pad: Tuple[int, int, int, int]) -> np.ndarray:
 
 def split_into_tiles(
     padded_image: np.ndarray, tile_size: int, h_blocks: int, w_blocks: int, input_tile_step: int
-) -> List[TileInfo]:
+) -> list[TileInfo]:
     """
     Split a padded image into overlapping tiles.
 
@@ -212,7 +212,7 @@ def split_into_tiles(
 
 
 def blend_and_assemble(
-    processed_tiles: List[np.ndarray], tile_infos: List[TileInfo], config: TilingConfig
+    processed_tiles: list[np.ndarray], tile_infos: list[TileInfo], config: TilingConfig
 ) -> np.ndarray:
     """
     Blend processed tiles back into a single image using seam blending.

@@ -34,17 +34,17 @@ from .waifu2x import AVAILABLE_MODELS, Waifu2xConfig, Waifu2xModel
 from .waifu2x import create as create_waifu2x
 
 __all__ = [
+    "AVAILABLE_MODELS",
     "DejpegModel",
     "FBCNNModel",
-    "Waifu2xModel",
-    "Waifu2xConfig",
     "TilingConfig",
-    "create_model",
+    "Waifu2xConfig",
+    "Waifu2xModel",
     "batch_convert",
     "convert_jpeg",
-    "pil_to_float_array",
+    "create_model",
     "float_array_to_pil",
-    "AVAILABLE_MODELS",
+    "pil_to_float_array",
 ]
 
 

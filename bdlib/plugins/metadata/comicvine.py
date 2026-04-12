@@ -1,5 +1,5 @@
 from argparse import ArgumentParser, Namespace
-from typing import Any, Optional
+from typing import Any
 
 from bdlib.cli.dto import MetadataConfig
 from bdlib.config import get_api_key, set_api_key
@@ -28,7 +28,7 @@ class ComicVinePlugin(MetadataPlugin):
             "metadata": MetadataConfig(enabled_sources=enabled_sources, country=args.country, language=args.language)
         }
 
-    def create_client(self, config: MetadataConfig) -> Optional[Any]:
+    def create_client(self, config: MetadataConfig) -> Any | None:
         if self.name not in config.enabled_sources:
             return None
 

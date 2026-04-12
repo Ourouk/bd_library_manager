@@ -5,7 +5,7 @@ Comic Vine API client for fetching comic metadata.
 
 import re
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import requests
 
@@ -21,12 +21,12 @@ BASE_URL = "https://comicvine.gamespot.com/api"
 class ComicVineClient:
     """Client for Comic Vine API."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: str | None = None):
         self.api_key = api_key or get_api_key()
         if not self.api_key:
             raise ValueError("Comic Vine API key is required")
 
-    def _request(self, endpoint: str, params: Optional[dict] = None) -> dict:
+    def _request(self, endpoint: str, params: dict | None = None) -> dict:
         """Make an API request."""
         params = params or {}
         params["api_key"] = self.api_key
@@ -47,7 +47,7 @@ class ComicVineClient:
             logger.error(f"Error calling Comic Vine API: {e}")
             return {}
 
-    def search_series(self, query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    def search_series(self, query: str, limit: int = 10) -> list[dict[str, Any]]:
         """
         Search for a comic series.
 
@@ -56,12 +56,12 @@ class ComicVineClient:
         data = self._request("search", {"query": query, "resources": "volume", "limit": limit})
         return data.get("results", [])
 
-    def get_volume(self, volume_id: int) -> Dict[str, Any]:
+    def get_volume(self, volume_id: int) -> dict[str, Any]:
         """Get detailed volume information."""
         data = self._request(f"volume/4050-{volume_id}")
         return data.get("results", {})
 
-    def get_volume_issues(self, volume_id: int, limit: int = 100) -> List[Dict[str, Any]]:
+    def get_volume_issues(self, volume_id: int, limit: int = 100) -> list[dict[str, Any]]:
         """
         Get all issues for a volume.
 
@@ -83,7 +83,7 @@ class ComicVineClient:
                 break
         return issues
 
-    def get_issue(self, issue_id: int) -> Dict[str, Any]:
+    def get_issue(self, issue_id: int) -> dict[str, Any]:
         """Get detailed issue information including credits."""
         issue_id_str = f"4000-{issue_id}"
         data = self._request(
@@ -111,7 +111,7 @@ class ComicVineClient:
         return data.get("results", {})
 
 
-def map_to_comicinfo(issue_data: Dict[str, Any], volume_data: Optional[Dict[str, Any]] = None) -> ComicMetadata:
+def map_to_comicinfo(issue_data: dict[str, Any], volume_data: dict[str, Any] | None = None) -> ComicMetadata:
     """
     Map Comic Vine issue data to ComicMetadata.
     """
@@ -143,7 +143,7 @@ def map_to_comicinfo(issue_data: Dict[str, Any], volume_data: Optional[Dict[str,
         "cover": "cover_artist",
         "editor": "editor",
     }
-    people_by_role: Dict[str, List[str]] = {}
+    people_by_role: dict[str, list[str]] = {}
     for person in person_credits:
         if role_str := person.get("role", ""):
             if name := person.get("name", ""):
@@ -172,7 +172,7 @@ def normalize_issue_number(num: str) -> str:
     return num
 
 
-def find_issue_by_number(issues: List[Dict[str, Any]], number: str) -> Optional[Dict[str, Any]]:
+def find_issue_by_number(issues: list[dict[str, Any]], number: str) -> dict[str, Any] | None:
     """Find an issue by its number."""
     search_num = normalize_issue_number(number)
     for issue in issues:
@@ -185,7 +185,7 @@ def find_issue_by_number(issues: List[Dict[str, Any]], number: str) -> Optional[
     return None
 
 
-def confirm_series(client: ComicVineClient, series_name: str) -> Optional[dict]:
+def confirm_series(client: ComicVineClient, series_name: str) -> dict | None:
     """Prompt user to confirm the correct series from search results."""
     logger.info(f"Searching Comic Vine for: {series_name}")
     results = client.search_series(series_name, limit=10)

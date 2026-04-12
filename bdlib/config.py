@@ -6,7 +6,7 @@ Stores API keys and cached series data.
 
 import json
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any
 
 from bdlib.log import get_logger
 
@@ -21,9 +21,9 @@ class Config:
 
     def __init__(self, config_path: Path = CONFIG_FILE):
         self.config_path = config_path
-        self.config: Dict[str, Any] = self._load()
+        self.config: dict[str, Any] = self._load()
 
-    def _load(self) -> Dict[str, Any]:
+    def _load(self) -> dict[str, Any]:
         """Load configuration from file."""
         if not self.config_path.exists():
             logger.info("Config file not found, creating a new one.")
@@ -44,7 +44,7 @@ class Config:
         except IOError as e:
             logger.error(f"Error saving config file: {e}")
 
-    def get_api_key(self) -> Optional[str]:
+    def get_api_key(self) -> str | None:
         """Get Comic Vine API key."""
         return self.config.get("comicvine_api_key")
 
@@ -53,15 +53,15 @@ class Config:
         self.config["comicvine_api_key"] = api_key
         self._save()
 
-    def get_cached_series(self) -> Dict[str, Any]:
+    def get_cached_series(self) -> dict[str, Any]:
         """Get cached series data."""
         return self.config.get("cached_series", {})
 
-    def get_cached_series_info(self, series_name: str) -> Optional[Dict[str, Any]]:
+    def get_cached_series_info(self, series_name: str) -> dict[str, Any] | None:
         """Get cached info for a specific series."""
         return self.get_cached_series().get(series_name)
 
-    def cache_series_info(self, series_name: str, info: Dict[str, Any]) -> None:
+    def cache_series_info(self, series_name: str, info: dict[str, Any]) -> None:
         """Cache series information for future lookups."""
         if "cached_series" not in self.config:
             self.config["cached_series"] = {}
