@@ -116,6 +116,10 @@ def map_to_comicinfo(issue_data: dict[str, Any], volume_data: dict[str, Any] | N
     Map Comic Vine issue data to ComicMetadata.
     """
     result = ComicMetadata()
+
+    if title := issue_data.get("name"):
+        result.title = title
+
     if description := issue_data.get("description"):
         result.summary = re.sub(r"<[^>]+>", "", description).strip()
 
