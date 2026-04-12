@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 from bdlib.cli.dto import ConverterConfig, MetadataConfig, ProcessingConfig
-from bdlib.config import cache_series_info, get_cached_series
 from bdlib.converters import cbz, dejpeg, jpeg_to_jxl
 from bdlib.converters.archive import is_archive
 from bdlib.dto import ComicMetadata
@@ -53,7 +52,10 @@ def get_comicvine_metadata(
     if not comicvine_client:
         return None
 
-    if series_name and series_name in series_cache:
+    if not series_name:
+        return None
+
+    if series_name in series_cache:
         cached = series_cache[series_name]
         if cached.get("skip"):
             logger.info("Skipping Comic Vine lookup (marked as skip)")
@@ -71,34 +73,33 @@ def get_comicvine_metadata(
         else:
             logger.warning(f"Issue #{number} not found in series")
             return None
-    else:
-        logger.info("Series not cached, searching Comic Vine...")
-        if not series_name:
+
+    logger.info("Series not cached, searching Comic Vine...")
+
+    series_info = confirm_series(comicvine_client, series_name)
+
+    if series_info and series_info.get("skip_all"):
+        series_cache[series_name] = {"skip": True, "name": series_name}
+        logger.info(f"Skipping Comic Vine for series: {series_name}")
+        return None
+    elif series_info:
+        logger.info(f"Fetching issues for {series_info['name']}...")
+        volume_id = series_info["id"]
+        volume_data = comicvine_client.get_volume(volume_id)
+        issues = comicvine_client.get_volume_issues(volume_id)
+        logger.info(f"Found {len(issues)} issues")
+
+        series_cache[series_name] = {"id": volume_id, "name": series_info["name"], "issues": issues}
+
+        issue = find_issue_by_number(issues, number) if number is not None else None
+        if issue:
+            logger.info(f"Found issue #{number}: {issue.get('name', 'N/A')}")
+            issue_data = comicvine_client.get_issue(issue["id"])
+            return map_to_comicinfo(issue_data, volume_data)
+        else:
+            logger.warning(f"Issue #{number} not found in series")
             return None
 
-        series_info = confirm_series(comicvine_client, series_name)
-
-        if series_info and series_info.get("skip_all"):
-            series_cache[series_name] = {"skip": True, "name": series_name}
-            logger.info(f"Skipping Comic Vine for series: {series_name}")
-            return None
-        elif series_info:
-            logger.info(f"Fetching issues for {series_info['name']}...")
-            volume_id = series_info["id"]
-            volume_data = comicvine_client.get_volume(volume_id)
-            issues = comicvine_client.get_volume_issues(volume_id)
-            logger.info(f"Found {len(issues)} issues")
-
-            series_cache[series_name] = {"id": volume_id, "name": series_info["name"], "issues": issues}
-
-            issue = find_issue_by_number(issues, number) if number is not None else None
-            if issue:
-                logger.info(f"Found issue #{number}: {issue.get('name', 'N/A')}")
-                issue_data = comicvine_client.get_issue(issue["id"])
-                return map_to_comicinfo(issue_data, volume_data)
-            else:
-                logger.warning(f"Issue #{number} not found in series")
-                return None
     return None
 
 
@@ -127,7 +128,7 @@ def process_folder(
     processing_config: ProcessingConfig,
     converter_config: ConverterConfig,
     metadata_config: MetadataConfig,
-    series_cache: dict | None = None,
+    series_cache: dict[str, Any] | None = None,
     archive_path: Path | None = None,
 ):
     """Process a single folder of JPEG images to create a JXL-based CBZ archive."""
@@ -235,7 +236,7 @@ def process_archive(
     processing_config: ProcessingConfig,
     converter_config: ConverterConfig,
     metadata_config: MetadataConfig,
-    series_cache: dict | None = None,
+    series_cache: dict[str, Any] | None = None,
 ):
     """Extract archive and process images to create a JXL-based CBZ."""
     from bdlib.converters.archive import extract_archive
@@ -280,24 +281,17 @@ def main():
     converter_config: ConverterConfig = config["converter"]
     metadata_config: MetadataConfig = config["metadata"]
 
-    series_cache = {}
-    if metadata_config.enabled_sources:
-        for plugin in plugins:
-            if isinstance(plugin, MetadataPlugin):
-                client = plugin.create_client(metadata_config)
-                if client:
-                    metadata_config.client = client
-                    break
-
-        if metadata_config.client:
-            cached_series = get_cached_series()
-            for name, info in cached_series.items():
-                if "skip" not in info:
-                    series_cache[name] = info
-            logger.info(f"Loaded {len(series_cache)} cached series")
+    for plugin in plugins:
+        if isinstance(plugin, MetadataPlugin):
+            client = plugin.create_client(metadata_config)
+            if client:
+                metadata_config.client = client
+                break
 
     folders = find_inputs(Path(processing_config.input), processing_config.single)
     logger.info(f"Found {len(folders)} item(s) to process")
+
+    series_cache: dict[str, Any] = {}
 
     success = 0
     for item in folders:
@@ -307,12 +301,6 @@ def main():
             result = process_folder(item, processing_config, converter_config, metadata_config, series_cache)
         if result:
             success += 1
-
-    if metadata_config.enabled_sources and series_cache:
-        for name, info in series_cache.items():
-            if "skip" not in info:
-                cache_series_info(name, info)
-        logger.info(f"Saved {len(series_cache)} series to cache")
 
     logger.info(f"Completed: {success}/{len(folders)} items processed")
 

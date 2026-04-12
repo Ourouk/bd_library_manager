@@ -47,7 +47,10 @@ def extract_folder_metadata(
         ...     patterns=(r"(\\d+)#(.+)", r"#(\\d+)", r"T(\\d+)")
         ... )
     """
-    series_name = folder.parent.name
+    if archive_path:
+        series_name = archive_path.parent.name
+    else:
+        series_name = folder.parent.name
     name_to_parse = archive_path.stem if archive_path else folder.name
 
     if patterns:

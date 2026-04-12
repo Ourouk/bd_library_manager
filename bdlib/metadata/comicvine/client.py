@@ -198,7 +198,9 @@ def confirm_series(client: ComicVineClient, series_name: str) -> dict | None:
         publisher = f" ({r.get('publisher', {}).get('name', '')})" if r.get("publisher") else ""
         year = f" ({r.get('start_year', '')})" if r.get("start_year") else ""
         issues = f" [{r.get('count_of_issues', '?')} issues]" if r.get("count_of_issues") else ""
-        print(f"    {i + 1}. {r['name']}{year}{publisher}{issues}")
+        volume_id = r.get("id", "")
+        link = f" https://comicvine.gamespot.com/volume/4050-{volume_id}" if volume_id else ""
+        print(f"    {i + 1}. {r['name']}{year}{publisher}{issues}{link}")
 
     print("    0. Skip (don't use Comic Vine)")
     print("    s. Skip all remaining (don't ask for this series again)")
